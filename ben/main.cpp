@@ -179,7 +179,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 1)
+  while(loop < 3)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
@@ -265,7 +265,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       }
 
       //Write out datafile that is utilized by lammps input script (NEEDS COMPLETION)
-      WriteDataFile(1000, Monomers);
+      WriteDataFile(natoms, Monomers);
 }
 
 void WriteDataFile(int numatoms, ParticleList &atoms)
@@ -294,7 +294,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           lammps_atoms = a;
           a = numatoms;
           //line = std::to_string(a)+" atoms";
-          ofs<<std::to_string(a)<<" atoms"<<std::endl;
+          ofs<<"       "<<std::to_string(a)<<" atoms"<<std::endl;
           continue;
         }
       }
