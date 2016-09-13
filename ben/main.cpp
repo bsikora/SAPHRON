@@ -325,7 +325,8 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         else if ( b == "Atoms")
         {
           ofs<<"Atoms"<<std::endl;
-          ofs<<""<<std::endl;
+          ofs<<std::endl;
+          cout<<"what is this"<<endl;
           int i = 1;
           for(auto& p : atoms)
           {
