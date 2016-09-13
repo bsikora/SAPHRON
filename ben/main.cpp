@@ -256,7 +256,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       delete [] x;
 
       // Perform moves for M steps ()
-      for(int i=0; i<10;i=i++)
+      for(int i=0; i<10;i++)
       {
         cout<<"I am here too"<<endl;
             // picks either insert or delete
