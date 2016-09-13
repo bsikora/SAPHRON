@@ -305,7 +305,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
             std::getline(infile,line);
             if(line.empty())
               continue;
-            i++
+            i++;
           }
           continue;
         }
@@ -315,12 +315,12 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           int i = 1;
           for(auto& p : atoms)
           {
-            ofs<<i<<" 0 "<<p.GetSpeciesID()<<" "<<p.GetCharge()<<" ";
-            auto& xyz = p.GetPosition();
+            ofs<<i<<" 0 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
+            auto& xyz = p->GetPosition();
             for(auto& x : xyz)
               ofs<<x<<" ";
             ofs<<std::endl;
-            i++
+            i++;
           }
           continue;
         }
