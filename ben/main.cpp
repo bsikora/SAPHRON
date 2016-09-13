@@ -265,7 +265,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       }
 
       //Write out datafile that is utilized by lammps input script (NEEDS COMPLETION)
-      WriteDataFile(1000);
+      WriteDataFile(1000, Monomers);
 }
 
 void WriteDataFile(int numatoms, ParticleList &atoms)
