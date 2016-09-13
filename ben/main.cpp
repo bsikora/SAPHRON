@@ -179,7 +179,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 3)
+  while(loop < 10)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
@@ -222,6 +222,7 @@ int main(int narg, char **arg)
       lmp->input->one("run 10000"); // can be passed as an argument args[3] for example
       Rand _rand(time(NULL));
       loop++;
+      cout << "the loop number is"<<loop<<endl;
   }
   if (lammps == 1) delete lmp;
   // close down MPI
@@ -264,15 +265,17 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
         move->Perform(&WM,&ffm,MoveOverride::None);
       }
 
-      //Write out datafile that is utilized by lammps input script (NEEDS COMPLETION)
+      //Write out datafile that is utilized by lammps input script
       WriteDataFile(natoms, Monomers);
 }
 
+
+//  WRITE THE LAMMPS DATA FILE
 void WriteDataFile(int numatoms, ParticleList &atoms)
 {
   cout<<"how come i am here"<< endl;
   std::ofstream ofs;
-  ofs.open ("Vik_Smells.dat", std::ofstream::out);
+  ofs.open ("4_LJ_atoms.chain", std::ofstream::out); // Vik_Smells.dat
   int lammps_atoms = 0;
 
   //Read in file and change what is needed
@@ -333,4 +336,4 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
   }
 }
 
-//1 molecule-tag atom-type q x y z
+//1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
