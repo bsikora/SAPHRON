@@ -287,6 +287,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       std::string b;
       if ((iss >> a >> b))
       {
+        cout<<"this is flag"<<endl;
         if(b == "atoms")
         {
           lammps_atoms = a;
