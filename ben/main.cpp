@@ -179,7 +179,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 10)
+  while(loop < 1)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
@@ -300,6 +300,13 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           ofs<<"       "<<std::to_string(a)<<" atoms"<<std::endl;
           continue;
         }
+        if(b == "Masses")
+        {
+          //line = std::to_string(a)+" atoms";
+          ofs<<std::endl;
+          ofs<<"     "<<"1"<<" 1.0"<<std::endl;
+          continue;
+        }
       }
       else if((iss >> b))
       {
@@ -318,16 +325,28 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         else if ( b == "Atoms")
         {
           ofs<<"Atoms"<<std::endl;
+          ofs<<std::endl;
           int i = 1;
           for(auto& p : atoms)
           {
             ofs<<i<<" 0 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
             auto& xyz = p->GetPosition();
-            for(auto& x : xyz)
-              ofs<<x<<" ";
+            int stop = 0;
+            for(auto& x : xyz){
+              if (stop<3)
+              {
+                ofs<<x<<" ";
+              }
+              stop++;
+            }
             ofs<<std::endl;
             i++;
           }
+          continue;
+        }
+        else if (b == "Bonds")
+        {
+          ofs<<std::endl;
           continue;
         }
       }
