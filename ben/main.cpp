@@ -303,7 +303,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         if(b == "Masses")
         {
           //line = std::to_string(a)+" atoms";
-          ofs<<std::endl;
+          ofs<<"\r\n";
           ofs<<"     "<<"1"<<" 1.0"<<std::endl;
           continue;
         }
@@ -325,7 +325,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         else if ( b == "Atoms")
         {
           ofs<<"Atoms"<<std::endl;
-          ofs<<std::endl;
+          ofs<<"\r\n";
           int i = 1;
           for(auto& p : atoms)
           {
@@ -346,7 +346,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         }
         else if (b == "Bonds")
         {
-          ofs<<std::endl;
+          ofs<<"\r\n";
           continue;
         }
       }
