@@ -179,7 +179,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 10)
+  while(loop < 1)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
