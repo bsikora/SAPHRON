@@ -36,7 +36,7 @@ using namespace LAMMPS_NS;
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world); //const SAPHRON::MoveOverride &override
 int main(int narg, char **arg)
 {
-// Set up SAPHRON in the main function fdeijvfnedilkvnkdf
+// Set up SAPHRON in the main function fdeijvfnedilkvnkdferferfreerfr
   ParticleList Monomers;
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
@@ -55,18 +55,18 @@ int main(int narg, char **arg)
   // ffm.AddNonBondedForceField("Monomer", "Monomer", dsf);
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
   ffm.AddBondedForceField("Monomer", "Monomer", fene);
-  InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
-  DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
+  //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
+  //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
   /*
-          AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10,time(NULL));
+          AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10,time(NULL));*/
           AnnealChargeMove AnnMv({{"Polymer"}}, time(NULL));
-  */
-  MM.AddMove(&Ins);
-  MM.AddMove(&Del);
+  
+  //MM.AddMove(&Ins);
+  //MM.AddMove(&Del);
   /*
-      MM.AddMove(&AcidMv);
-      MM.AddMove(&AnnMv);
-  */
+      MM.AddMove(&AcidMv);*/
+     MM.AddMove(&AnnMv);
+  
 
 
   // setup MPI and various communicators
