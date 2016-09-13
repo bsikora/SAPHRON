@@ -32,11 +32,11 @@ using namespace std;
 using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
-// forward declaration
+// forward declaration fkjldfdvfjkndfvjkndfvjkn
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world); //const SAPHRON::MoveOverride &override
 int main(int narg, char **arg)
 {
-// Set up SAPHRON in the main function
+// Set up SAPHRON in the main function fdeijvfnedilkvnkdf
   ParticleList Monomers;
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
