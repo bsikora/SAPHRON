@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <chrono>
 #include <ctime>
@@ -255,4 +256,30 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       }
 
       //Write out datafile that is utilized by lammps input script (NEEDS COMPLETION)
+}
+
+void WriteDataFile(int numatoms)
+{
+  std::ofstream ofs;
+  ofs.open ("Vik_Smells.dat", std::ofstream::out);
+
+  //Read in file and change what is needed
+  std::ifstream infile("thefile.txt");
+  std::string line;
+  while (std::getline(infile, line))
+  {
+      std::istringstream iss(line);
+      int a;
+      std::string b;
+      if ((iss >> a >> b))
+      {
+        if(b == "atoms")
+        {
+          a = numatoms;
+        }
+      }
+      line = std::to_string(a)+" atoms";
+
+      ofs<<line<<std::endl;
+  }
 }
