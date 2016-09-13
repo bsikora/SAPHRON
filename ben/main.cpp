@@ -194,7 +194,7 @@ int main(int narg, char **arg)
     // Read lammps input file (it will read the data file line also)
       FILE *fp;
       if (me == 0) {
-        fp = fopen(arg[2],"r");
+        fp = fopen("in.sammps2","r");
         if (fp == NULL) {
           printf("ERROR: Could not open LAMMPS input script\n");
           MPI_Abort(MPI_COMM_WORLD,1);
@@ -275,7 +275,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
 {
   cout<<"how come i am here"<< endl;
   std::ofstream ofs;
-  ofs.open ("4_LJ_atoms.chain", std::ofstream::out); // Vik_Smells.dat
+  ofs.open ("Vik_Smells.dat", std::ofstream::out); // Vik_Smells.dat
   int lammps_atoms = 0;
 
   //Read in file and change what is needed
