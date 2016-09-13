@@ -55,8 +55,10 @@ int main(int narg, char **arg)
   // Electrostatics
   // DSFFF dsf(0.1, 3.0);    
   // ffm.AddNonBondedForceField("Monomer", "Monomer", dsf);
-  ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
-  ffm.AddBondedForceField("Monomer", "Monomer", fene);
+
+  //ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
+  //ffm.AddBondedForceField("Monomer", "Monomer", fene);
+  
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
   /*
@@ -165,6 +167,8 @@ int main(int narg, char **arg)
   {
     poly.AddChild(c);
   }
+  ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
+  ffm.AddBondedForceField("Monomer", "Monomer", fene);
   world.AddParticle(&poly);
   world.SetChemicalPotential("Monomer", 10);
 
