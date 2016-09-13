@@ -256,6 +256,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       }
 
       //Write out datafile that is utilized by lammps input script (NEEDS COMPLETION)
+      WriteDataFile(1000);
 }
 
 void WriteDataFile(int numatoms)
@@ -264,7 +265,7 @@ void WriteDataFile(int numatoms)
   ofs.open ("Vik_Smells.dat", std::ofstream::out);
 
   //Read in file and change what is needed
-  std::ifstream infile("thefile.txt");
+  std::ifstream infile("4_LJ_atoms.chain");
   std::string line;
   while (std::getline(infile, line))
   {
