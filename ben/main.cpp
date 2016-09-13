@@ -34,6 +34,7 @@ using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
+void WriteDataFile(int numatoms);
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world); //const SAPHRON::MoveOverride &override
 int main(int narg, char **arg)
 {
