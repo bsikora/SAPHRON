@@ -58,7 +58,7 @@ int main(int narg, char **arg)
 
   //ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
   //ffm.AddBondedForceField("Monomer", "Monomer", fene);
-  
+
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
   /*
@@ -178,7 +178,8 @@ int main(int narg, char **arg)
   MPI_Barrier(MPI_COMM_WORLD);
 
   // WHILE LOOP (alternating between saphron and lammps)
-  while(1)
+  int loop = 0;
+  while(loop < 10)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
@@ -220,6 +221,7 @@ int main(int narg, char **arg)
      // Run lammps for N steps, lammps_loop function deleted
       lmp->input->one("run 10000"); // can be passed as an argument args[3] for example
       Rand _rand(time(NULL));
+      loop++;
   }
   if (lammps == 1) delete lmp;
   // close down MPI
@@ -233,6 +235,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       // Gather coordinates from lammps instance
       //if (lammps == 1)
       //{
+        cout<<"I am here"<<endl;
         int natoms = static_cast<int> (lmp->atom->natoms);
         double *x = new double[3*natoms];
         lammps_gather_atoms(lmp,"x",1,3,x);
@@ -253,8 +256,9 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       delete [] x;
 
       // Perform moves for M steps ()
-      for(int i=0; i<10000;i=i++)
+      for(int i=0; i<10;i=i++)
       {
+        cout<<"I am here too"<<endl;
             // picks either insert or delete
         auto* move = MM.SelectRandomMove();
         move->Perform(&WM,&ffm,MoveOverride::None);
@@ -266,6 +270,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 
 void WriteDataFile(int numatoms)
 {
+  cout<<"how come i am here"<< endl;
   std::ofstream ofs;
   ofs.open ("Vik_Smells.dat", std::ofstream::out);
 
