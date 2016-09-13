@@ -259,16 +259,19 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       WriteDataFile(1000);
 }
 
-void WriteDataFile(int numatoms)
+void WriteDataFile(int numatoms, ParticleList &atoms)
 {
   std::ofstream ofs;
   ofs.open ("Vik_Smells.dat", std::ofstream::out);
+  int lammps_atoms = 0;
 
   //Read in file and change what is needed
   std::ifstream infile("4_LJ_atoms.chain");
   std::string line;
   while (std::getline(infile, line))
   {
+      if(line.empty())
+        continue;
       std::istringstream iss(line);
       int a;
       std::string b;
@@ -276,11 +279,45 @@ void WriteDataFile(int numatoms)
       {
         if(b == "atoms")
         {
+          lammps_atoms = a;
           a = numatoms;
+          line = std::to_string(a)+" atoms";
+          continue;
         }
       }
-      line = std::to_string(a)+" atoms";
+      else if((iss >> b))
+      {
+        if( b == "Velocities")
+        {
+          int i = 0;
+          while(i < lammps_atoms)
+          {
+            std::getline(infile,line);
+            if(line.empty())
+              continue;
+            i++
+          }
+          continue;
+        }
+        else if ( b == "Atoms")
+        {
+          ofs<<"Atoms"<<std::endl;
+          int i = 1;
+          for(auto& p : atoms)
+          {
+            ofs<<i<<" 0 "<<p.GetSpeciesID()<<" "<<p.GetCharge()<<" ";
+            auto& xyz = p.GetPosition();
+            for(auto& x : xyz)
+              ofs<<x<<" ";
+            ofs<<std::endl;
+            i++
+          }
+          continue;
+        }
+      }
 
       ofs<<line<<std::endl;
   }
 }
+
+//1 molecule-tag atom-type q x y z
