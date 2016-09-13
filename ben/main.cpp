@@ -293,7 +293,8 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           cout<<"b is equal to atoms"<<endl;
           lammps_atoms = a;
           a = numatoms;
-          line = std::to_string(a)+" atoms";
+          //line = std::to_string(a)+" atoms";
+          ofs<<std::to_string(a)<<" atoms"<<std::endl;
           continue;
         }
       }
