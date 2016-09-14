@@ -293,10 +293,11 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
 
     ofs<<iss.str()<<std::endl;
 
-    if (s2.std::string::find(s1))
+    if (s2.std::string::find(s1) != std::string::npos)
     {
+      std::cout << "found!" << '\n';
       cout<<iss.str()<<std::endl;
-      //nikjnkjnkmnkmnkljnl
+      //nikjnkjnkmnkmnkljnlfbdfvfvdf
       //ofs<<"       "<<std::to_string(numatoms)<<" atoms"<<std::endl;
       //continue;
     }
