@@ -308,7 +308,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       }
       continue;
     }
-    ofs<<line<<std::endl;
+    ofs<<iss.str()<<std::endl;
   } //sdfiokndkvndkfvnk
 }
 
