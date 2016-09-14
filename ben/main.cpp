@@ -309,12 +309,12 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           continue;
         }*/
       }
-      if((iss >> b))
+      if((iss.str()).find("Atoms"))
       {
         cout<<"wow there horsie"<<std::endl;
-        cout << b<<std::endl;
+        //cout << b<<std::endl;
 
-        if( b == "Velocities")
+        /*if( b == "Velocities")
         {
           int i = 0;
           while(i < lammps_atoms)
@@ -325,9 +325,9 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
             i++;
           }
           continue;
-        }
-        if ( b == "Atoms")
-        {
+        }*/
+       // if ( b == "Atoms")
+        //{
           ofs<<"Atoms"<<std::endl;
           ofs<<std::endl;
           cout<<"what is this"<<std::endl;
@@ -348,7 +348,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
             i++;
           }
           continue;
-        }
+        }//
        /* else if (b == "Bonds")
         {
           ofs<<"\r\n";
