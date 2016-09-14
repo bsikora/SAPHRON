@@ -302,49 +302,10 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       int i = 1;
       for(auto& p : atoms)
       {
-<<<<<<< HEAD
         ofs<<i<<" 1 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
         auto& xyz = p->GetPosition();
         for(auto& x : xyz){
             ofs<<x<<" ";
-=======
-        if(b == "atoms")
-        {
-          lammps_atoms = a;
-          a = numatoms;
-          line = std::to_string(a)+" atoms";
-          continue;
-        }
-      }
-      else if((iss >> b))
-      {
-        if( b == "Velocities")
-        {
-          int i = 0;
-          while(i < lammps_atoms)
-          {
-            std::getline(infile,line);
-            if(line.empty())
-              continue;
-            i++
-          }
-          continue;
-        }
-        else if ( b == "Atoms")
-        {
-          ofs<<"Atoms"<<std::endl;
-          int i = 1;
-          for(auto& p : atoms)
-          {
-            ofs<<i<<" 0 "<<p.GetSpeciesID()<<" "<<p.GetCharge()<<" ";
-            auto& xyz = p.GetPosition();
-            for(auto& x : xyz)
-              ofs<<x<<" ";
-            ofs<<std::endl;
-            i++
-          }
-          continue;
->>>>>>> parent of d2a7f70... p->
         }
         ofs<<std::endl;
         i++;
