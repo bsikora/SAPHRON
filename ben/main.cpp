@@ -298,10 +298,11 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     if (s2.std::string::find(s3) != std::string::npos)
     {
       ofs<<"Atoms"<<std::endl;
+      ofs<<std::endl;
       int i = 1;
       for(auto& p : atoms)
       {
-        ofs<<i<<" 0 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
+        ofs<<i<<" 1 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
         auto& xyz = p->GetPosition();
         for(auto& x : xyz){
             ofs<<x<<" ";
@@ -311,8 +312,23 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       }
       continue;
     }
-    ofs<<iss.str()<<std::endl;
+
+
+    std::string s4 = "Masses";
+    if (s2.std::string::find(s4) != std::string::npos)
+    {
+      ofs<<std::endl;
+      continue;
+    }
+
+    std::string s5 = "Bonds";
+    if (s2.std::string::find(s5) != std::string::npos)
+    {
+      ofs<<std::endl;
+      continue;
+    }
     
+    ofs<<iss.str()<<std::endl;
   } //sdfiokndkvndkfvnkdfcv dfv
 }
 
