@@ -276,6 +276,8 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
   cout<<"I am in the data file"<< endl;
   std::ofstream ofs;
   ofs.open ("Vik_Smells.dat", std::ofstream::out);
+  int numlammpsatoms;
+  std::string garbage;
 
   //Read in file and change what is needed
   std::ifstream infile("4_LJ_atoms.chain");
@@ -292,6 +294,8 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     if (s2.std::string::find(s1) != std::string::npos)
     {
       ofs<<"       "<<std::to_string(numatoms)<<" atoms"<<std::endl;
+      iss >> numlammpsatoms >> garbage;
+      std::cout<<"Num lammps atoms is "<<numlammpsatoms<<std::endl;
       continue;
     }
     std::string s3 = "Atoms";
@@ -300,6 +304,15 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       ofs<<"Atoms"<<std::endl;
       ofs<<std::endl;
       int i = 1;
+      int ii = 0;
+      while(ii < numlammpsatoms)
+      {
+        std::getline(infile,line);
+        if(line.empty())
+          continue;
+        ii++
+      }
+      //continue;
       for(auto& p : atoms)
       {
         ofs<<i<<" 1 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
