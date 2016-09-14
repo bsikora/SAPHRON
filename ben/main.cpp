@@ -310,7 +310,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         std::getline(infile,line);
         if(line.empty())
           continue;
-        ii++
+        ii++;
       }
       //continue;
       for(auto& p : atoms)
@@ -344,7 +344,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     }
 
     ofs<<iss.str()<<std::endl;
-  } //sdfiokndkvndkfvnkdfcv dfv
+  } //sdfiokndkvndkfvnkdfcv dfvfdkvjbefkvoidfvdiof
 }
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
