@@ -179,7 +179,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 1)
+  while(loop < 10)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
@@ -305,14 +305,15 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       ofs<<std::endl;
       int i = 1;
       int ii = 0;
-      while(ii < numlammpsatoms)
+      while(ii < numlammpsatoms) // this while loop is important
+        // this makes sure that you don't read lines corresponding to previous lammps coordinates
       {
         std::getline(infile,line);
         if(line.empty())
           continue;
         ii++;
       }
-      //continue;
+
       for(auto& p : atoms)
       {
         ofs<<i<<" 1 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
@@ -343,8 +344,29 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       continue;
     }
 
+    std::string s6 = "xlo";
+    if (s2.std::string::find(s6) != std::string::npos)
+    {
+      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(10.38498)<<" xlo xhi"<<std::endl;
+      continue;
+    }
+
+    std::string s7 = "ylo";
+    if (s2.std::string::find(s7) != std::string::npos)
+    {
+      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(10.38498)<<" ylo yhi"<<std::endl;
+      continue;
+    }
+
+    std::string s8 = "zlo";
+    if (s2.std::string::find(s8) != std::string::npos)
+    {
+      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(10.38498)<<" zlo zhi"<<std::endl;
+      continue;
+    }
+
     ofs<<iss.str()<<std::endl;
-  } //sdfiokndkvndkfvnkdfcv dfvfdkvjbefkvoidfvdiof
+  } //s
 }
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
