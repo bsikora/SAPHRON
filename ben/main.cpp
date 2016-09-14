@@ -300,16 +300,18 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           ofs<<"       "<<std::to_string(a)<<" atoms"<<std::endl;
           continue;
         }
-        if(b == "Masses")
+        /*if(b == "Masses")
         {
           //line = std::to_string(a)+" atoms";
           ofs<<"\r\n";
           ofs<<"     "<<"1"<<" 1.0"<<std::endl;
           continue;
-        }
+        }*/
       }
       else if((iss >> b))
       {
+        cout<<"wow there horsie"<<std::endl;
+        
         if( b == "Velocities")
         {
           int i = 0;
@@ -326,7 +328,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         {
           ofs<<"Atoms"<<std::endl;
           ofs<<std::endl;
-          cout<<"what is this"<<endl;
+          cout<<"what is this"<<std::endl;
           int i = 1;
           for(auto& p : atoms)
           {
@@ -345,11 +347,11 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           }
           continue;
         }
-        else if (b == "Bonds")
+       /* else if (b == "Bonds")
         {
           ofs<<"\r\n";
           continue;
-        }
+        }*/
       }
 
       ofs<<line<<std::endl;
