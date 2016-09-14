@@ -357,7 +357,6 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       }
 
       ofs<<line<<std::endl;
-  }
-}
+  } //jkionkjnlkj
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
