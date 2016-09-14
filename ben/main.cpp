@@ -273,90 +273,42 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 //  WRITE THE LAMMPS DATA FILE
 void WriteDataFile(int numatoms, ParticleList &atoms)
 {
-  cout<<"how come i am here"<< endl;
+  cout<<"I am in the data file"<< endl;
   std::ofstream ofs;
-  ofs.open ("Vik_Smells.dat", std::ofstream::out); // Vik_Smells.dat
-  int lammps_atoms = 0;
+  ofs.open ("Vik_Smells.dat", std::ofstream::out);
 
   //Read in file and change what is needed
   std::ifstream infile("4_LJ_atoms.chain");
   std::string line;
   while (std::getline(infile, line))
   {
-      if(line.empty())
-        continue;
-      std::istringstream iss(line);
-      int a;
-      std::string b;
-      cout<<iss.str()<<std::endl;
-      if ((iss >> a >> b))
+    if(line.empty())
+      continue;
+    std::istringstream iss(line);
+
+    if ((iss.str()).find("atoms"))
+    {
+      ofs<<"       "<<std::to_string(a)<<" atoms"<<std::endl;
+      continue;
+    }
+
+    if ((iss.str()).find("Atoms"))
+    {
+      ofs<<"Atoms"<<std::endl;
+      int i = 1;
+      for(auto& p : atoms)
       {
-        cout<<"this is flag"<<endl;
-        if(b == "atoms")
-        {
-          cout<<"b is equal to atoms"<<endl;
-          lammps_atoms = a;
-          a = numatoms;
-          //line = std::to_string(a)+" atoms";
-          ofs<<"       "<<std::to_string(a)<<" atoms"<<std::endl;
-          continue;
+        ofs<<i<<" 0 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
+        auto& xyz = p->GetPosition();
+        for(auto& x : xyz){
+            ofs<<x<<" ";
         }
-        /*if(b == "Masses")
-        {
-          //line = std::to_string(a)+" atoms";
-          ofs<<"\r\n";
-          ofs<<"     "<<"1"<<" 1.0"<<std::endl;
-          continue;
-        }*/
+        ofs<<std::endl;
+        i++;
       }
-      if((iss.str()).find("Atoms"))
-      {
-        cout<<"wow there horsie"<<std::endl;
-        //cout << b<<std::endl;
-
-        /*if( b == "Velocities")
-        {
-          int i = 0;
-          while(i < lammps_atoms)
-          {
-            std::getline(infile,line);
-            if(line.empty())
-              continue;
-            i++;
-          }
-          continue;
-        }*/
-       // if ( b == "Atoms")
-        //{
-          ofs<<"Atoms"<<std::endl;
-          ofs<<std::endl;
-          cout<<"what is this"<<std::endl;
-          int i = 1;
-          for(auto& p : atoms)
-          {
-            ofs<<i<<" 0 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
-            auto& xyz = p->GetPosition();
-            int stop = 0;
-            for(auto& x : xyz){
-              if (stop<3)
-              {
-                ofs<<x<<" ";
-              }
-              stop++;
-            }
-            ofs<<std::endl;
-            i++;
-          }
-          continue;
-        }//
-       /* else if (b == "Bonds")
-        {
-          ofs<<"\r\n";
-          continue;
-        }*/
-      }
-
-      ofs<<line<<std::endl;
-  } //jkionkjnlkj
+      continue;
+    }
+    ofs<<line<<std::endl;
+  }
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
