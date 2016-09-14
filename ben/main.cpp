@@ -366,7 +366,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     }
 
     ofs<<iss.str()<<std::endl;
-  } //s
+  } //sfdbkjnfgjkvnfkdnvfkd
 }
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
