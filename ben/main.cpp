@@ -286,23 +286,16 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     if(line.empty())
       continue;
     std::istringstream iss(line);
-    cout<<iss.str()<<std::endl;
-
     std::string s2 = iss.str();
-    std::string s1 = "Atoms";
-
-    ofs<<iss.str()<<std::endl;
-
+    
+    std::string s1 = "atoms";
     if (s2.std::string::find(s1) != std::string::npos)
     {
-      std::cout << "found!" << '\n';
-      cout<<iss.str()<<std::endl;
-      //nikjnkjnkmnkmnkljnlfbdfvfvdf
-      //ofs<<"       "<<std::to_string(numatoms)<<" atoms"<<std::endl;
-      //continue;
+      ofs<<"       "<<std::to_string(numatoms)<<" atoms"<<std::endl;
+      continue;
     }
-/*
-    if ((iss.str()).find("Atoms"))
+    std::string s3 = "Atoms";
+    if (s2.std::string::find(s3) != std::string::npos)
     {
       ofs<<"Atoms"<<std::endl;
       int i = 1;
@@ -319,8 +312,8 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       continue;
     }
     ofs<<iss.str()<<std::endl;
-    */
-  } //sdfiokndkvndkfvnk
+    
+  } //sdfiokndkvndkfvnkdfcv dfv
 }
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
