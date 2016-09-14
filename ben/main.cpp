@@ -238,8 +238,11 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       //{
         cout<<"I am here"<<endl;
         int natoms = static_cast<int> (lmp->atom->natoms);
+        cout << "the number of atoms is" << natoms << endl;
         double *x = new double[3*natoms];
+        cout << "the x is "<<x<<endl;
         lammps_gather_atoms(lmp,"x",1,3,x);
+        cout << "lammps gather "<<x<<endl;
         Rand _rand(time(NULL));
       //}
 
