@@ -288,6 +288,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       std::istringstream iss(line);
       int a;
       std::string b;
+      cout<<iss<<std::endl;
       if ((iss >> a >> b))
       {
         cout<<"this is flag"<<endl;
