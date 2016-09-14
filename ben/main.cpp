@@ -311,6 +311,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       if((iss >> b))
       {
         cout<<"wow there horsie"<<std::endl;
+        cout << b<<std::endl;
 
         if( b == "Velocities")
         {
@@ -324,7 +325,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
           }
           continue;
         }
-        else if ( b == "Atoms")
+        if ( b == "Atoms")
         {
           ofs<<"Atoms"<<std::endl;
           ofs<<std::endl;
