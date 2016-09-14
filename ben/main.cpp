@@ -282,9 +282,11 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
   std::string line;
   while (std::getline(infile, line))
   {
+
     if(line.empty())
       continue;
     std::istringstream iss(line);
+    cout<<iss.str()<<std::endl;
 
     if ((iss.str()).find("atoms"))
     {
