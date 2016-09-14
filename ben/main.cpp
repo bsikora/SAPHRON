@@ -288,7 +288,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
 
     if ((iss.str()).find("atoms"))
     {
-      ofs<<"       "<<std::to_string(a)<<" atoms"<<std::endl;
+      ofs<<"       "<<std::to_string(numatoms)<<" atoms"<<std::endl;
       continue;
     }
 
