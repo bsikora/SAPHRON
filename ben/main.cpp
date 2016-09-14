@@ -317,6 +317,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     std::string s4 = "Masses";
     if (s2.std::string::find(s4) != std::string::npos)
     {
+      ofs<<"Masses"<<std::endl;
       ofs<<std::endl;
       continue;
     }
@@ -324,10 +325,11 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     std::string s5 = "Bonds";
     if (s2.std::string::find(s5) != std::string::npos)
     {
+      ofs<<"Bonds"<<std::endl;
       ofs<<std::endl;
       continue;
     }
-    
+
     ofs<<iss.str()<<std::endl;
   } //sdfiokndkvndkfvnkdfcv dfv
 }
