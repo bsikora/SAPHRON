@@ -237,7 +237,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       //if (lammps == 1)
       //{
         cout<<"I am here"<<endl;
-        cout<<"yolo"<<*lmp<<endl;
+        cout<<"yolo"<<lmp<<endl;
         int natoms = static_cast<int> (lmp->atom->natoms);
         cout << "the number of atoms is" << natoms << endl;
         double *x = new double[3*natoms];
