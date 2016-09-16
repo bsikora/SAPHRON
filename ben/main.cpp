@@ -118,13 +118,15 @@ int main(int narg, char **arg)
   // all LAMMPS procs call input->one() on the line
   
   // Create an instance of lammps and run for equilibration
-  LAMMPS *lmp;
-  if (lammps == 1) lmp = new LAMMPS(0,NULL,comm_lammps);
+  LAMMPS *Oldlmp;
+  LAMMPS *Newlmp;
+  if (lammps == 1) Oldlmp = new LAMMPS(0,NULL,comm_lammps);
   else
   {
   	std::cout<<"Couldn't make LAMMPS instance!"<<std::endl;
   	exit(-1);
   }
+
   int n;
   char line[1024];
   while (1) 
@@ -139,13 +141,13 @@ int main(int narg, char **arg)
     MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
     if (n == 0) break;
     MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
-    if (lammps == 1) lmp->input->one(line);
+    Oldlmp->input->one(line);
 
   }
 
-  int natoms = static_cast<int> (lmp->atom->natoms);
+  int natoms = static_cast<int> (Oldlmp->atom->natoms);
   double *x = new double[3*natoms];
-  lammps_gather_atoms(lmp,"x",1,3,x);
+  lammps_gather_atoms(Oldlmp,"x",1,3,x);
   Rand _rand(time(NULL));
 
   // Intialize monomers
@@ -182,49 +184,53 @@ int main(int narg, char **arg)
   while(loop < 10)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
-    saphronLoop(lmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
+    if(loop == 0)
+    {
+      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
+      delete Oldlmp;
+    }
+    else
+    {
+      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
+      delete Newlmp;
+    }
 
-    // Delete instance of LAMMPS
-    if (lammps == 1) delete lmp;
 
-    // Create lammps instance
-      LAMMPS *lmp;
-      if (lammps == 1) lmp = new LAMMPS(0,NULL,comm_lammps);
-
+    Newlmp = new LAMMPS(0,NULL,comm_lammps);
     // Read lammps input file (it will read the data file line also)
-      FILE *fp;
-      if (me == 0) {
-        fp = fopen("in.sammps2","r");
-        if (fp == NULL) {
-          printf("ERROR: Could not open LAMMPS input script\n");
-          MPI_Abort(MPI_COMM_WORLD,1);
-        }
+    FILE *fp;
+    if (me == 0) {
+      fp = fopen("in.sammps2","r");
+      if (fp == NULL) {
+        printf("ERROR: Could not open LAMMPS input script\n");
+        MPI_Abort(MPI_COMM_WORLD,1);
       }
+    }
 
-      int n;
-      char line[1024];
-      while (1) 
+    int n;
+    char line[1024];
+    while (1) 
+    {
+      if (me == 0) 
       {
-        if (me == 0) 
-        {
-          if (fgets(line,1024,fp) == NULL) n = 0;
-          else n = strlen(line) + 1;
-          if (n == 0) fclose(fp);
-        }
-
-        MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
-        if (n == 0) break;
-        MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
-        if (lammps == 1) lmp->input->one(line);
+        if (fgets(line,1024,fp) == NULL) n = 0;
+        else n = strlen(line) + 1;
+        if (n == 0) fclose(fp);
       }
 
-     // Run lammps for N steps, lammps_loop function deleted
-      lmp->input->one("run 10000"); // can be passed as an argument args[3] for example
-      Rand _rand(time(NULL));
-      loop++;
-      cout << "the loop number is"<<loop<<endl;
+      MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+      if (n == 0) break;
+      MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
+      Newlmp->input->one(line);
+    }
+
+    // Run lammps for N steps, lammps_loop function deleted
+    Newlmp->input->one("run 10000"); // can be passed as an argument args[3] for example
+    Rand _rand(time(NULL));
+    loop++;
+    cout << "the loop number is"<<loop<<endl;
   }
-  if (lammps == 1) delete lmp;
+
   // close down MPI
   MPI_Finalize();
 }
