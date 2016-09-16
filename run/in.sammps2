@@ -1,0 +1,47 @@
+#echo screen
+#screen none
+units         lj
+atom_style    full
+special_bonds fene
+
+
+read_data          Vik_Smells.dat
+
+set type 1 charge 0
+
+neighbor      0.3 bin
+neigh_modify  every 1 delay 0 check yes
+
+bond_style      fene
+bond_coeff    1 30 2 1.0 1.0    # make sure changes are same in the SAPHRON cpp code also
+                              
+pair_style lj/cut 1.122 # make sure changes are same in the SAPHRON cpp code also     
+pair_modify   shift yes   # see about this
+#pair_modify   tail  yes
+pair_coeff 1 1 0.8 1.0 1.122 #trunc shift
+
+minimize 1e-6 1e-4 10000 10000000
+
+velocity all create 1.2 4928459 dist gaussian
+
+fix           1 all langevin 1.2 1.2 10.0 904297  # in T units scaled by KbT/epsilon
+fix           2 all nve
+fix           6 all deform 1 x final 0 10.38498 y final 0 10.38498 z final 0 10.38498 remap x remap v
+
+run          10000
+unfix 6
+compute 1 all ke
+compute 2 all pe
+compute 3 all pair lj/cut evdwl
+compute 4 all pe bond
+variable tot equal "c_2"
+
+dump          id all atom 1 sammps2.lammpstrj
+dump_modify id scale no
+log log.4_LJ_atoms_poly
+
+thermo          100000
+thermo_style custom step ke pe etotal temp ecoul evdwl v_tot c_3 c_4
+
+run           50000
+
