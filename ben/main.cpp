@@ -164,7 +164,7 @@ int main(int narg, char **arg)
 
   Monomers[0]->AddBondedNeighbor(Monomers[1]);
   Monomers[natoms-1]->AddBondedNeighbor(Monomers[natoms-2]);
-
+  Monomers[0]->SetCharge(1.0);
   for(auto& c : Monomers)
   {
     poly.AddChild(c);
