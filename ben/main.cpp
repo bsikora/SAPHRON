@@ -164,7 +164,7 @@ int main(int narg, char **arg)
 
   Monomers[0]->AddBondedNeighbor(Monomers[1]);
   Monomers[natoms-1]->AddBondedNeighbor(Monomers[natoms-2]);
-  Monomers[2]->SetCharge(1.0);
+  Monomers[3]->SetCharge(1.0);
   for(auto& c : Monomers)
   {
     poly.AddChild(c);
@@ -181,7 +181,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 10)
+  while(loop < 5)
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
@@ -267,7 +267,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       delete [] x;
 
       // Perform moves for M steps ()
-      for(int i=0; i<10;i++)
+      for(int i=0; i<30;i++)
       {
         cout<<"I am here too"<<endl;
             // picks either insert or delete
