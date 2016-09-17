@@ -150,7 +150,7 @@ int main(int narg, char **arg)
   lammps_gather_atoms(Oldlmp,"x",1,3,x);
   Rand _rand(time(NULL));
 
-  // Intialize monomers
+  // Intialize monomers, urfijndjkdfjkfdjknfdjk
   for(int i=0; i<natoms*3;i=i+3)
   {
     Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
@@ -164,7 +164,7 @@ int main(int narg, char **arg)
 
   Monomers[0]->AddBondedNeighbor(Monomers[1]);
   Monomers[natoms-1]->AddBondedNeighbor(Monomers[natoms-2]);
-  Monomers[0]->SetCharge(1.0);
+  Monomers[2]->SetCharge(1.0);
   for(auto& c : Monomers)
   {
     poly.AddChild(c);
