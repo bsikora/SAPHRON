@@ -10,7 +10,7 @@ dielectric	0.35014
 
 read_data	data.polymer
 
-change_box	all boundary m m m
+change_box	all boundary p p p
 group		polymer molecule == 1
 
 set		group polymer charge 0.0
