@@ -55,7 +55,7 @@ int main(int narg, char **arg)
 
   LennardJonesTSFF lj(1.0, 0.5, {2.5});
   FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
-  DebyeHuckelFF debHuc(10, {0.5}) // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
+  DebyeHuckelFF debHuc(10, {0.5}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
