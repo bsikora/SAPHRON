@@ -1,4 +1,4 @@
-#echo screen
+echo screen
 
 log none
 
@@ -10,19 +10,19 @@ dielectric	0.35014
 
 read_data	data.polymer2
 
-change_box	all boundary m m m
+change_box	all boundary p p p
 group		polymer molecule == 1
 
 neighbor	10.0 bin
 
-velocity all create 1.0 698052 dist gaussian
+#velocity all create 1.0 698052 dist gaussian
 
 thermo 10000
 thermo_style multi
 
 #######Interaction Parameters##########
 pair_style	lj/cut/coul/debye 10.0 2.5 0.5
-pair_coeff	* * 1.00 0.50
+pair_coeff	* * 1.00 1.00
 pair_modify	shift yes
 
 #######Bonds###########################
