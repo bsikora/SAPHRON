@@ -54,6 +54,10 @@ fix	2 all langevin 1.0 1.0 1.0 188801
 ###########Equilibration in the deformed box#################
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
+
+dump          id all atom 10000 dump.1st_run
+dump_modify id scale no
+
 run	60000
 #########################################6000000
 
