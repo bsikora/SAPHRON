@@ -12,7 +12,7 @@
 #include "../src/ForceFields/ForceFieldManager.h"
 #include "../src/ForceFields/LennardJonesTSFF.h"
 #include "../src/ForceFields/DSFFF.h"
-#include "../src/ForceFields/DebyeHuckel.h"
+#include "../src/ForceFields/DebyeHuckelFF.h"
 #include "../src/ForceFields/FENEFF.h"
 #include "../src/Moves/MoveManager.h"
 #include "../src/Moves/Move.h"
