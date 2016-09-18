@@ -12,12 +12,14 @@
 #include "../src/ForceFields/ForceFieldManager.h"
 #include "../src/ForceFields/LennardJonesTSFF.h"
 #include "../src/ForceFields/DSFFF.h"
+#include "../src/ForceFields/DebyeHuckel.h"
 #include "../src/ForceFields/FENEFF.h"
 #include "../src/Moves/MoveManager.h"
 #include "../src/Moves/Move.h"
 #include "../src/Moves/InsertParticleMove.h"
 #include "../src/Moves/DeleteParticleMove.h"
 #include "../src/Moves/AcidReactionMove.h"
+#include "../src/Moves/AcidTitrationMove.h"
 #include "../src/Moves/AnnealChargeMove.h"
 #include "../src/Particles/Particle.h"
 #include "../src/Worlds/World.h"
@@ -36,43 +38,35 @@ using namespace LAMMPS_NS;
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
 void WriteDataFile(int numatoms, ParticleList &atoms);
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world); //const SAPHRON::MoveOverride &override
+
 int main(int narg, char **arg)
 {
-// Set up SAPHRON in the main function fdeijvfnedilkvnkdferferfreerfr
+	/****************TWO THINGS TO FIX:- FORCEFIELD PARAMETERS AND THE WHILE LOOP*/
+
+// REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
   ParticleList Monomers;
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
-  double rcut = 3.0;
-  World world(10.38498, 10.38498, 10.38498, rcut, 46732);
+  double rcut = 300.0;
+  World world(1000.0, 1000.0, 1000.0, rcut, 46732); // same as input script
   WorldManager WM;
   WM.AddWorld(&world);
   MoveManager MM (time(NULL));
-  //MoveOverride override = SAPHRON::MoveOveride::None;
-  //enum MoveOveride override = None;
 
-  LennardJonesTSFF lj(0.8, 1.0, {1.122});
-  FENEFF fene(1.0, 1.0, 30.0, 2.0);
-  // Electrostatics
-  // DSFFF dsf(0.1, 3.0);    
-  // ffm.AddNonBondedForceField("Monomer", "Monomer", dsf);
-
-  //ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
-  //ffm.AddBondedForceField("Monomer", "Monomer", fene);
+  LennardJonesTSFF lj(1.0, 0.5, {2.5});
+  FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
+  DebyeHuckelFF debHuc(10, {0.5}) // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
-  /*
-          AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10,time(NULL));*/
-          AnnealChargeMove AnnMv({{"Polymer"}}, time(NULL));
-  
+  //AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10,time(NULL));
+  AnnealChargeMove AnnMv({{"Polymer"}}, time(NULL));
+  MM.AddMove(&AnnMv);
+
   //MM.AddMove(&Ins);
   //MM.AddMove(&Del);
-  /*
-      MM.AddMove(&AcidMv);*/
-     MM.AddMove(&AnnMv);
+  //MM.AddMove(&AcidMv);
   
-
-
   // setup MPI and various communicators
   // driver runs on all procs in MPI_COMM_WORLD
   // comm_lammps only has 1st P procs (could be all or any subset)
@@ -145,12 +139,13 @@ int main(int narg, char **arg)
 
   }
 
+  // ******************************INITIALIZATION**************************************//
   int natoms = static_cast<int> (Oldlmp->atom->natoms);
   double *x = new double[3*natoms];
   lammps_gather_atoms(Oldlmp,"x",1,3,x);
   Rand _rand(time(NULL));
 
-  // Intialize monomers, urfijndjkdfjkfdjknfdjk
+  // Intialize monomers 
   for(int i=0; i<natoms*3;i=i+3)
   {
     Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
@@ -161,27 +156,37 @@ int main(int narg, char **arg)
     Monomers[i]->AddBondedNeighbor(Monomers[i+1]);
     Monomers[i]->AddBondedNeighbor(Monomers[i-1]);
   }
-
   Monomers[0]->AddBondedNeighbor(Monomers[1]);
   Monomers[natoms-1]->AddBondedNeighbor(Monomers[natoms-2]);
-  Monomers[3]->SetCharge(1.0);
+
+  // Making each monomer child of polymer
   for(auto& c : Monomers)
   {
     poly.AddChild(c);
   }
+
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
   ffm.AddBondedForceField("Monomer", "Monomer", fene);
+  ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
   world.AddParticle(&poly);
-  world.SetChemicalPotential("Monomer", 10);
+
+  // Adding titration moves
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.0, -2.0, time(NULL));  // proton charge, mu
+  MM.AddMove(&AcidTitMv);
 
   delete [] x;
 
   //Make sure all threads are caught up to this point.
   MPI_Barrier(MPI_COMM_WORLD);
+/*####################$$$$$$$$$$$$$$@@@@@@@@@@@@@@@@@@@@@************%%%%%%%%%%%%%%%%%%%%%%%%#&&&&&&&&&&&&&&&&&&&*/
+
+
+
+
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 5)
+  while(loop < atoi(arg[3].c_str()))   // MAKE THIS AN ARGUMENT ??????????????
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
@@ -200,7 +205,7 @@ int main(int narg, char **arg)
     // Read lammps input file (it will read the data file line also)
     FILE *fp;
     if (me == 0) {
-      fp = fopen("in.sammps2","r");
+      fp = fopen("in.polymer_new2","r");
       if (fp == NULL) {
         printf("ERROR: Could not open LAMMPS input script\n");
         MPI_Abort(MPI_COMM_WORLD,1);
@@ -225,10 +230,10 @@ int main(int narg, char **arg)
     }
 
     // Run lammps for N steps, lammps_loop function deleted
-    Newlmp->input->one("run 10000"); // can be passed as an argument args[3] for example
+    Newlmp->input->one("run 1000"); // can be passed as an argument args[3] for example
     Rand _rand(time(NULL));
+    cout << "the loop number is "<<loop<<endl;
     loop++;
-    cout << "the loop number is"<<loop<<endl;
   }
 
   // close down MPI
@@ -239,25 +244,28 @@ int main(int narg, char **arg)
 // FUNCTION
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world){ // const SAPHRON::MoveOverride &override
 
-      // Gather coordinates from lammps instance
-      //if (lammps == 1)
-      //{
-        cout<<"I am here"<<endl;
-        cout<<"yolo"<<lmp<<endl;
-        int natoms = static_cast<int> (lmp->atom->natoms);
-        cout << "the number of atoms is" << natoms << endl;
-        double *x = new double[3*natoms];
-        cout << "the x is "<<x<<endl;
-        lammps_gather_atoms(lmp,"x",1,3,x);
-        cout << "lammps gather "<<x<<endl;
-        Rand _rand(time(NULL));
-      //}
+	    cout<<"I am here"<<endl;
+	    int natoms = static_cast<int> (lmp->atom->natoms);
+	    cout << "the number of atoms is" << natoms << endl;
+	    double *x = new double[3*natoms];
+	    double *q = new double[natoms];
+	    lammps_gather_atoms(lmp,"x",1,3,x);
+	    lammps_gather_atoms(lmp,"q",1,1,q);
+	    Rand _rand(time(NULL));
 
       // Set position of monomers 
       int j = 0;
       for(int i=0; i<natoms*3;i=i+3){
             Monomers[j]->SetPosition({x[i],x[i+1],x[i+2]});
             j++;
+      }
+
+      // Set charges on the monomers
+      int k = 0;
+      for(auto& chg : Monomers)
+      {
+      	chg->SetCharge(q[k]);
+      	k++;
       }
 
       // Energy evaluation and setting
@@ -269,10 +277,8 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       // Perform moves for M steps ()
       for(int i=0; i<30;i++)
       {
-        cout<<"I am here too"<<endl;
-            // picks either insert or delete
         auto* move = MM.SelectRandomMove();
-        move->Perform(&WM,&ffm,MoveOverride::None);
+        move->Perform(&WM,&ffm,MoveOverride::None); // performs all the moves like dabbing
       }
 
       //Write out datafile that is utilized by lammps input script
@@ -283,14 +289,13 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 //  WRITE THE LAMMPS DATA FILE
 void WriteDataFile(int numatoms, ParticleList &atoms)
 {
-  cout<<"I am in the data file"<< endl;
   std::ofstream ofs;
-  ofs.open ("Vik_Smells.dat", std::ofstream::out);
+  ofs.open ("data.polymer2", std::ofstream::out);
   int numlammpsatoms;
   std::string garbage;
 
   //Read in file and change what is needed
-  std::ifstream infile("4_LJ_atoms.chain");
+  std::ifstream infile("data.polymer");
   std::string line;
   while (std::getline(infile, line))
   {
@@ -357,26 +362,27 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     std::string s6 = "xlo";
     if (s2.std::string::find(s6) != std::string::npos)
     {
-      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(10.38498)<<" xlo xhi"<<std::endl;
+      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(1000.0)<<" xlo xhi"<<std::endl;
       continue;
     }
 
     std::string s7 = "ylo";
     if (s2.std::string::find(s7) != std::string::npos)
     {
-      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(10.38498)<<" ylo yhi"<<std::endl;
+      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(1000.0)<<" ylo yhi"<<std::endl;
       continue;
     }
 
     std::string s8 = "zlo";
     if (s2.std::string::find(s8) != std::string::npos)
     {
-      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(10.38498)<<" zlo zhi"<<std::endl;
+      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(1000.0)<<" zlo zhi"<<std::endl;
       continue;
     }
 
     ofs<<iss.str()<<std::endl;
-  } //sfdbkjnfgjkvnfkdnvfkd
+  }
 }
 
+//sfdbkjnfgjkvnfkdnvfkd
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
