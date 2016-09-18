@@ -186,7 +186,7 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < atoi(arg[3].c_str()))   // MAKE THIS AN ARGUMENT ??????????????
+  while(loop < 100)   // MAKE THIS AN ARGUMENT ??????????????atoi(arg[3].c_str())
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
