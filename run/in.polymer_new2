@@ -1,5 +1,5 @@
 echo screen
-
+yoloooooooo
 log none
 
 units		lj
@@ -59,6 +59,7 @@ fix	7 polymer print 100 '$r $s $t $u $v $w $x $y $z' file mu_-2_debye_0.1.both
 fix	8 polymer ave/atom 1 10000 10000 x y z
 
 dump          id all atom 10000 dump.mu_-2_debye_0.1
+dump_modify id scale no
 #################################################
 
 #######Run simulation###########################
