@@ -173,7 +173,7 @@ int main(int narg, char **arg)
   world.AddParticle(&poly);
 
   // Adding titration moves ?????????????????
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.0, 1.0, time(NULL));  // proton charge, mu
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.0, -4.0, time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
 
   delete [] x;
