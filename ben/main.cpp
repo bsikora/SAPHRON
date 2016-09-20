@@ -172,8 +172,8 @@ int main(int narg, char **arg)
   ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
   world.AddParticle(&poly);
 
-  // Adding titration moves
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.0, -2.0, time(NULL));  // proton charge, mu
+  // Adding titration moves ?????????????????
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.0, 1.0, time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
 
   delete [] x;
@@ -252,7 +252,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 
 	    cout<<"I am here"<<endl;
 	    int natoms = static_cast<int> (lmp->atom->natoms);
-	    cout << "the number of atoms is" << natoms << endl;
+	    cout << "the number of atoms is " << natoms << endl;
 	    double *x = new double[3*natoms];
 	    double *q = new double[natoms];
 	    lammps_gather_atoms(lmp,"x",1,3,x);
@@ -293,12 +293,12 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
     for(auto& p : Monomers)
       {
       	intMonomers++;
-      	if (p->GetCharge() == 1.0)
+      	if (p->GetCharge())
       	{
       		intCharge++;
       	}
       }
-      cout<<"the fraction charged is"<< ((double)intCharge)/intMonomers << endl;
+      cout<<"the fraction charged is "<< ((double)intCharge)/intMonomers << endl;
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
