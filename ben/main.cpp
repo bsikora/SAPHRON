@@ -288,8 +288,8 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       }
 
     // FRACTION OF CHARGE CALCULATION
-    intCharge = 0;
-    intMonomers = 0;
+    int intCharge = 0;
+    int intMonomers = 0;
     for(auto& p : Monomers)
       {
       	intMonomers++;
