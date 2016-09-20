@@ -38,32 +38,9 @@ fix	1 all nve
 fix	2 all langevin 1.0 1.0 1.0 188801
 ########################################
 
-######Computes, fixes, variables, dumps########
-compute myGYR polymer gyration
-compute atomCharge polymer property/atom q
-compute sumatomcharge polymer reduce sum c_atomCharge
-
-variable r equal step
-variable s equal temp
-variable t equal c_myGYR
-variable u equal c_sumatomcharge
-variable v equal pe
-variable w equal ke
-variable x equal ecoul
-variable y equal evdwl
-variable z equal etotal
-
-fix 5 polymer ave/time 100 1 100 c_myGYR file mu_-2_debye_0.1.gyr mode scalar
-fix 6 polymer ave/time 1000 1 1000 c_sumatomcharge file mu_-2_debye_0.1.charge mode scalar
-fix	7 polymer print 100 '$r $s $t $u $v $w $x $y $z' file mu_-2_debye_0.1.both
-fix	8 polymer ave/atom 1 10000 10000 x y z
-
-dump          id all atom 10000 dump.mu_-2_debye_0.1
-dump_modify id scale no
-#################################################
 
 #######Run simulation###########################
-thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul v_t v_u
+thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
 
