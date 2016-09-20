@@ -37,13 +37,15 @@ using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
 void WriteDataFile(int numatoms, ParticleList &atoms);
-void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world); //const SAPHRON::MoveOverride &override
+void WriteAnalysisFile(vector<double>& chgVec);
+void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec); //const SAPHRON::MoveOverride &override
 
 int main(int narg, char **arg)
 {
 	/****************TWO THINGS TO FIX:- FORCEFIELD PARAMETERS AND THE WHILE LOOP*/
 
 // REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
+  std::vector<double> chargeVector;
   ParticleList Monomers;
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
@@ -186,17 +188,17 @@ int main(int narg, char **arg)
 
   // WHILE LOOP (alternating between saphron and lammps)
   int loop = 0;
-  while(loop < 100)   // MAKE THIS AN ARGUMENT ??????????????atoi(arg[3].c_str())
+  while(loop < atoi(arg[3].c_str()))   // MAKE THIS AN ARGUMENT ??????????????atoi(arg[3].c_str())
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
     {
-      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
+      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector); // SAPHRON::MoveOverride::None
       delete Oldlmp;
     }
     else
     {
-      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world); // SAPHRON::MoveOverride::None
+      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector); // SAPHRON::MoveOverride::None
       delete Newlmp;
     }
 
@@ -236,13 +238,15 @@ int main(int narg, char **arg)
     loop++;
   }
 
+  WriteAnalysisFile(chargeVector);
+
   // close down MPI
   MPI_Finalize();
 }
 
 
 // FUNCTION
-void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world){ // const SAPHRON::MoveOverride &override
+void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec){ // const SAPHRON::MoveOverride &override
 
 	    cout<<"I am here"<<endl;
 	    int natoms = static_cast<int> (lmp->atom->natoms);
@@ -281,8 +285,23 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
         move->Perform(&WM,&ffm,MoveOverride::None); // performs all the moves like dabbing
       }
 
+    // FRACTION OF CHARGE CALCULATION
+    intCharge = 0;
+    intMonomers = 0;
+    for(auto& p : Monomers)
+      {
+      	intMonomers++;
+      	if (p->GetCharge() == 1.0)
+      	{
+      		intCharge++;
+      	}
+      }
+      cout<<"the fraction charged is"<< ((double)intCharge)/intMonomers << endl;
+      chgVec.push_back((double)intCharge/intMonomers);
+
       //Write out datafile that is utilized by lammps input script
       WriteDataFile(natoms, Monomers);
+     
 }
 
 
@@ -382,6 +401,16 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
 
     ofs<<iss.str()<<std::endl;
   }
+}
+
+void WriteAnalysisFile(vector<double>& chgVec)
+{
+	 std::ofstream ofs;
+     ofs.open ("fraction_charged.dat", std::ofstream::out);
+    for (std::vector<int>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
+    {
+    	ofs<<std::to_string(*it)<<std::endl;
+    }
 }
 
 //sfdbkjnfgjkvnfkdnvfkd
