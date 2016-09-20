@@ -407,7 +407,7 @@ void WriteAnalysisFile(vector<double>& chgVec)
 {
 	 std::ofstream ofs;
      ofs.open ("fraction_charged.dat", std::ofstream::out);
-    for (std::vector<int>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
+    for (std::vector<double>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
     {
     	ofs<<std::to_string(*it)<<std::endl;
     }
