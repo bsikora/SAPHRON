@@ -187,8 +187,10 @@ int main(int narg, char **arg)
 
 
   // WHILE LOOP (alternating between saphron and lammps)
+  std::string::size_type sz;   // alias of size_t
+  int numLoops = std::stoi(arg[3],&sz);
   int loop = 0;
-  while(loop < atoi(arg[3].c_str()))   // MAKE THIS AN ARGUMENT ??????????????atoi(arg[3].c_str())
+  while(loop < numLoops)   // MAKE THIS AN ARGUMENT ??????????????atoi(arg[3].c_str())
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
