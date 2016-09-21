@@ -211,10 +211,9 @@ int main(int narg, char **arg)
     }
 
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
-    readInputFile(int &me, LAMMPS* &Rglmp, "in.RgRun");
+    readInputFile(me, Rglmp, "in.RgRun");
     Rg_value = lammps_extract_compute(Rglmp,"Rg",0,0);
     rgVector.push_back(Rg_value);
-    Rand _rand(time(NULL));
     delete Rglmp;
 
 
@@ -222,7 +221,7 @@ int main(int narg, char **arg)
     // Read lammps input file (it will read the data file line also)
     // read a sample input file that calculated Rg value and extract that value out and delete that temp
     // instance
-    void readInputFile(int &me, LAMMPS* &Newlmp, "in.polymer_new2");
+    void readInputFile(me, Newlmp, "in.polymer_new2");
 
 
     // Run lammps for N steps, lammps_loop function deleted
