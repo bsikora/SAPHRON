@@ -40,4 +40,4 @@ thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul c_myGYR
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
 
-run 10000
+#run 10000
