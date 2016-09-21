@@ -183,7 +183,8 @@ int main(int narg, char **arg)
   world.AddParticle(&poly);
 
   // Adding titration moves ?????????????????
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1, -4.0, time(NULL));  // proton charge, mu
+  // proton charge based on dielectric (e*sqrt(2.8) == 1.67)
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, -4.0, time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
 
   delete [] x;
@@ -297,7 +298,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       		intCharge++;
       	}
       }
-      cout<<"the fraction charged is "<< ((double)intCharge)/intMonomers << endl;
+      //cout<<"the fraction charged is "<< ((double)intCharge)/intMonomers << endl;
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
@@ -407,7 +408,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
 void WriteFractionAnalysisFile(vector<double>& chgVec)
 {
 	 std::ofstream ofs;
-     ofs.open ("fraction_charged.dat", std::ofstream::out);
+     ofs.open ("fraction_charged_mu_-4.dat", std::ofstream::out);
     for (std::vector<double>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
     {
     	ofs<<std::to_string(*it)<<std::endl;
@@ -417,7 +418,7 @@ void WriteFractionAnalysisFile(vector<double>& chgVec)
 void WriteRgAnalysisFile(vector<double>& rgVec)
 {
    std::ofstream ofs;
-     ofs.open ("Rg.dat", std::ofstream::out);
+     ofs.open ("Rg_mu_-4.dat", std::ofstream::out);
     for (std::vector<double>::iterator it = rgVec.begin() ; it != rgVec.end(); ++it)
     {
       ofs<<std::to_string(*it)<<std::endl;
