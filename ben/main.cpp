@@ -223,7 +223,7 @@ int main(int narg, char **arg)
     // Read lammps input file (it will read the data file line also)
     // read a sample input file that calculated Rg value and extract that value out and delete that temp
     // instance
-    void readInputFile(Newlmp, yol);
+    readInputFile(Newlmp, yol);
 
 
     // Run lammps for N steps, lammps_loop function deleted
