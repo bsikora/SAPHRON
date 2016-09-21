@@ -6,6 +6,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include <string>
 #include "mpi.h"
 #include <omp.h>
 #include <time.h>
@@ -47,6 +48,8 @@ int main(int narg, char **arg)
 	/****************TWO THINGS TO FIX:- FORCEFIELD PARAMETERS AND THE WHILE LOOP*/
 
 // REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
+  std::string s = "in.RgRun";
+  std::string yol = "in.polymer_new2";
   std::vector<double> chargeVector;
   std::vector<double> rgVector;
   ParticleList Monomers;
@@ -210,7 +213,6 @@ int main(int narg, char **arg)
     }
 
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
-    std::string s = "in.RgRun";
     readInputFile(Rglmp, s);
     double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
     rgVector.push_back(*Rg_value);
@@ -218,7 +220,6 @@ int main(int narg, char **arg)
 
 
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
-    std::string yol = "in.polymer_new2";
     // Read lammps input file (it will read the data file line also)
     // read a sample input file that calculated Rg value and extract that value out and delete that temp
     // instance
