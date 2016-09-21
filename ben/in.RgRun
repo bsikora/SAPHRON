@@ -1,0 +1,16 @@
+#echo screen
+
+log none
+
+units		lj
+atom_style	full
+
+read_data	data.polymer2
+
+change_box	all boundary p p p
+group		polymer molecule == 1
+
+neighbor	10.0 bin
+neigh_modify delay 0 every 1 check yes
+
+compute Rg polymer gyration

@@ -37,7 +37,9 @@ using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
 void WriteDataFile(int numatoms, ParticleList &atoms);
-void WriteAnalysisFile(vector<double>& chgVec);
+void WriteFractionAnalysisFile(vector<double>& chgVec);
+void readInputFile(int &me, LAMMPS* &lmp, std::string &inFile);
+void WriteRgAnalysisFile(vector<double>& rgVec);
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec); //const SAPHRON::MoveOverride &override
 
 int main(int narg, char **arg)
@@ -46,6 +48,8 @@ int main(int narg, char **arg)
 
 // REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
   std::vector<double> chargeVector;
+  double Rg_value = 0;
+  std::vector<double> rgVector;
   ParticleList Monomers;
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
@@ -116,6 +120,7 @@ int main(int narg, char **arg)
   // Create an instance of lammps and run for equilibration
   LAMMPS *Oldlmp;
   LAMMPS *Newlmp;
+  LAMMPS *Rglmp;
   if (lammps == 1) Oldlmp = new LAMMPS(0,NULL,comm_lammps);
   else
   {
@@ -186,11 +191,12 @@ int main(int narg, char **arg)
 
 
 
-  // WHILE LOOP (alternating between saphron and lammps)
-  std::string::size_type sz;   // alias of size_t
+  
+  std::string::size_type sz;
   int numLoops = std::stoi(arg[3],&sz);
   int loop = 0;
-  while(loop < numLoops)   // MAKE THIS AN ARGUMENT ??????????????atoi(arg[3].c_str())
+  // WHILE LOOP (alternating between saphron and lammps)
+  while(loop < numLoops)   
   {
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
@@ -204,34 +210,20 @@ int main(int narg, char **arg)
       delete Newlmp;
     }
 
+    Rglmp = new LAMMPS(0,NULL,comm_lammps);
+    readInputFile(int &me, LAMMPS* &Rglmp, "in.RgRun");
+    Rg_value = lammps_extract_compute(Rglmp,"Rg",0,0);
+    rgVector.push_back(Rg_value);
+    Rand _rand(time(NULL));
+    delete Rglmp;
+
 
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
     // Read lammps input file (it will read the data file line also)
-    FILE *fp;
-    if (me == 0) {
-      fp = fopen("in.polymer_new2","r");
-      if (fp == NULL) {
-        printf("ERROR: Could not open LAMMPS input script\n");
-        MPI_Abort(MPI_COMM_WORLD,1);
-      }
-    }
+    // read a sample input file that calculated Rg value and extract that value out and delete that temp
+    // instance
+    void readInputFile(int &me, LAMMPS* &Newlmp, "in.polymer_new2");
 
-    int n;
-    char line[1024];
-    while (1) 
-    {
-      if (me == 0) 
-      {
-        if (fgets(line,1024,fp) == NULL) n = 0;
-        else n = strlen(line) + 1;
-        if (n == 0) fclose(fp);
-      }
-
-      MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
-      if (n == 0) break;
-      MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
-      Newlmp->input->one(line);
-    }
 
     // Run lammps for N steps, lammps_loop function deleted
     Newlmp->input->one("run 1000"); // can be passed as an argument args[3] for example
@@ -240,7 +232,8 @@ int main(int narg, char **arg)
     loop++;
   }
 
-  WriteAnalysisFile(chargeVector);
+  WriteFractionAnalysisFile(chargeVector);
+  WriteRgAnalysisFile(rgVector);
 
   // close down MPI
   MPI_Finalize();
@@ -405,13 +398,52 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
   }
 }
 
-void WriteAnalysisFile(vector<double>& chgVec)
+void WriteFractionAnalysisFile(vector<double>& chgVec)
 {
 	 std::ofstream ofs;
      ofs.open ("fraction_charged.dat", std::ofstream::out);
     for (std::vector<double>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
     {
     	ofs<<std::to_string(*it)<<std::endl;
+    }
+}
+
+void WriteRgAnalysisFile(vector<double>& rgVec)
+{
+   std::ofstream ofs;
+     ofs.open ("Rg.dat", std::ofstream::out);
+    for (std::vector<double>::iterator it = rgVec.begin() ; it != rgVec.end(); ++it)
+    {
+      ofs<<std::to_string(*it)<<std::endl;
+    }
+}
+
+void readInputFile(int &me, LAMMPS* &lmp, std::string &inFile)
+{
+    FILE *fp;
+    if (me == 0) {
+      fp = fopen(inFile,"r");
+      if (fp == NULL) {
+        printf("ERROR: Could not open LAMMPS input script\n");
+        MPI_Abort(MPI_COMM_WORLD,1);
+      }
+    }
+
+    int n;
+    char line[1024];
+    while (1) 
+    {
+      if (me == 0) 
+      {
+        if (fgets(line,1024,fp) == NULL) n = 0;
+        else n = strlen(line) + 1;
+        if (n == 0) fclose(fp);
+      }
+
+      MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+      if (n == 0) break;
+      MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
+      lmp->input->one(line);
     }
 }
 
