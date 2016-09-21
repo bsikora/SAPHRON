@@ -13,4 +13,4 @@ group		polymer molecule == 1
 neighbor	10.0 bin
 neigh_modify delay 0 every 1 check yes
 
-compute Rg polymer gyration
+compute Rg_compute polymer gyration

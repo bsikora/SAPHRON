@@ -38,7 +38,7 @@ using namespace LAMMPS_NS;
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
 void WriteDataFile(int numatoms, ParticleList &atoms);
 void WriteFractionAnalysisFile(vector<double>& chgVec);
-void readInputFile(int &me, LAMMPS* &lmp, std::string &inFile);
+void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec); //const SAPHRON::MoveOverride &override
 
@@ -194,7 +194,6 @@ int main(int narg, char **arg)
   std::string::size_type sz;
   int numLoops = std::stoi(arg[3],&sz);
   int loop = 0;
-  me = 0;
   // WHILE LOOP (alternating between saphron and lammps)
   while(loop < numLoops)   
   {
@@ -212,8 +211,8 @@ int main(int narg, char **arg)
 
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
     std::string s = "in.RgRun";
-    readInputFile(me, Rglmp, s);
-    double *Rg_value = lammps_extract_compute(Rglmp,"Rg",0,0);
+    readInputFile(Rglmp, s);
+    double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
     rgVector.push_back(*Rg_value);
     delete Rglmp;
 
@@ -223,7 +222,7 @@ int main(int narg, char **arg)
     // Read lammps input file (it will read the data file line also)
     // read a sample input file that calculated Rg value and extract that value out and delete that temp
     // instance
-    void readInputFile(me, Newlmp, yol);
+    void readInputFile(Newlmp, yol);
 
 
     // Run lammps for N steps, lammps_loop function deleted
@@ -419,27 +418,27 @@ void WriteRgAnalysisFile(vector<double>& rgVec)
     }
 }
 
-void readInputFile(int &me, LAMMPS* &lmp, std::string &inFile)
+void readInputFile(LAMMPS* &lmp, std::string &inFile)   //int &me, 
 {
     FILE *fp;
-    if (me == 0) {
+    //if (me == 0) {
       fp = fopen(inFile,"r");
       if (fp == NULL) {
         printf("ERROR: Could not open LAMMPS input script\n");
         MPI_Abort(MPI_COMM_WORLD,1);
       }
-    }
+    //}
 
     int n;
     char line[1024];
     while (1) 
     {
-      if (me == 0) 
-      {
+      //if (me == 0) 
+      //{
         if (fgets(line,1024,fp) == NULL) n = 0;
         else n = strlen(line) + 1;
         if (n == 0) fclose(fp);
-      }
+      //}
 
       MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
       if (n == 0) break;
