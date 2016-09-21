@@ -48,7 +48,6 @@ int main(int narg, char **arg)
 
 // REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
   std::vector<double> chargeVector;
-  double Rg_value = 0;
   std::vector<double> rgVector;
   ParticleList Monomers;
   ForceFieldManager ffm;
@@ -195,6 +194,7 @@ int main(int narg, char **arg)
   std::string::size_type sz;
   int numLoops = std::stoi(arg[3],&sz);
   int loop = 0;
+  me = 0;
   // WHILE LOOP (alternating between saphron and lammps)
   while(loop < numLoops)   
   {
@@ -213,8 +213,8 @@ int main(int narg, char **arg)
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
     std::string s = "in.RgRun";
     readInputFile(me, Rglmp, s);
-    Rg_value = lammps_extract_compute(Rglmp,"Rg",0,0);
-    rgVector.push_back(Rg_value);
+    double *Rg_value = lammps_extract_compute(Rglmp,"Rg",0,0);
+    rgVector.push_back(*Rg_value);
     delete Rglmp;
 
 
