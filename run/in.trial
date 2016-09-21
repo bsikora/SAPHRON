@@ -5,14 +5,14 @@ atom_style	full
 
 dielectric	0.35714 # dielectric = 1/(bjurrem_length * KbT)
 
-read_data	data.polymer
+read_data	data.trial      #size changed
 
-change_box	all boundary m m m
+change_box	all boundary p p p
 group		polymer molecule == 1
 
 set		group polymer charge 0.0
 
-read_dump	dump.relax 300000 x y z box no replace yes
+#read_dump	dump.relax 300000 x y z box no replace yes
 neighbor	10.0 bin
 
 velocity all create 1.0 698052 dist gaussian
