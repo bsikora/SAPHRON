@@ -13,6 +13,17 @@ group		polymer molecule == 1
 neighbor	10.0 bin
 neigh_modify delay 0 every 1 check yes
 
+#######Interaction Parameters##########
+pair_style	lj/cut/coul/debye 10.0 2.5 0.5
+pair_coeff	* * 1.00 1.00
+pair_modify	shift yes
+
+#######Bonds###########################
+special_bonds	fene
+bond_style	fene
+bond_coeff    1 30 2 1.0 1.0
+#######Interaction Parameters##########
+
 compute Rg_compute polymer gyration
 
 run 10
