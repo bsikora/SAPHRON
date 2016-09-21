@@ -15,6 +15,7 @@
 #include "../src/ForceFields/DSFFF.h"
 #include "../src/ForceFields/DebyeHuckelFF.h"
 #include "../src/ForceFields/FENEFF.h"
+#include "../src/ForceFields/HarmonicFF.h"
 #include "../src/Moves/MoveManager.h"
 #include "../src/Moves/Move.h"
 #include "../src/Moves/InsertParticleMove.h"
@@ -62,7 +63,8 @@ int main(int narg, char **arg)
   MoveManager MM (time(NULL));
 
   LennardJonesTSFF lj(1.0, 1.0, {2.5});
-  FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
+  //FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
+  HarmonicFF harmo(1.8, 0.0);
   DebyeHuckelFF debHuc(10, {0.5}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
@@ -175,7 +177,7 @@ int main(int narg, char **arg)
   }
 
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
-  ffm.AddBondedForceField("Monomer", "Monomer", fene);
+  ffm.AddBondedForceField("Monomer", "Monomer", harmo); // changed bonded force field
   ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
   ffm.AddBondedForceField("Monomer", "Monomer", debHuc);
   world.AddParticle(&poly);
@@ -380,21 +382,21 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
     std::string s6 = "xlo";
     if (s2.std::string::find(s6) != std::string::npos)
     {
-      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(1000.0)<<" xlo xhi"<<std::endl;
+      ofs<<"       "<<std::to_string(0.0)<<" "<<std::to_string(1000.0)<<" xlo xhi"<<std::endl;
       continue;
     }
 
     std::string s7 = "ylo";
     if (s2.std::string::find(s7) != std::string::npos)
     {
-      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(1000.0)<<" ylo yhi"<<std::endl;
+      ofs<<"       "<<std::to_string(0.0)<<" "<<std::to_string(1000.0)<<" ylo yhi"<<std::endl;
       continue;
     }
 
     std::string s8 = "zlo";
     if (s2.std::string::find(s8) != std::string::npos)
     {
-      ofs<<"       "<<std::to_string(0)<<" "<<std::to_string(1000.0)<<" zlo zhi"<<std::endl;
+      ofs<<"       "<<std::to_string(0.0)<<" "<<std::to_string(1000.0)<<" zlo zhi"<<std::endl;
       continue;
     }
 
