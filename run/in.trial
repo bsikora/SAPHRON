@@ -45,6 +45,7 @@ run	60000
 compute myGYR polymer gyration
 
 dump          id all atom 1000 trial.lammpstrj
+dump_modify   id scale no
 #################################################
 
 #######Run simulation###########################

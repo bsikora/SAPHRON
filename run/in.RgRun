@@ -1,11 +1,13 @@
-#echo screen
+# echo screen
 
 log none
 
 units		lj
 atom_style	full
 
-read_data	data.polymer2
+dielectric	0.35714 # dielectric = 1/(bjurrem_length * KbT)
+
+read_data	data.polymer2      #size changed
 
 change_box	all boundary p p p
 group		polymer molecule == 1
@@ -17,13 +19,11 @@ neigh_modify delay 0 every 1 check yes
 pair_style	lj/cut/coul/debye 10.0 2.5 0.5
 pair_coeff	* * 1.00 1.00
 pair_modify	shift yes
-
-#######Bonds###########################
-special_bonds	fene
-bond_style	fene
-bond_coeff    1 30 2 1.0 1.0
+special_bonds	lj/coul 1.0 1.0 1.0
+bond_style	harmonic
+bond_coeff	1 1.8 0.0
 #######Interaction Parameters##########
 
 compute Rg_compute polymer gyration
 
-run 10
+run 1
