@@ -213,6 +213,7 @@ int main(int narg, char **arg)
     }
 
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
+    cout <<"is it happening here"<<endl;
     readInputFile(Rglmp, s);
     //double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
     double Rg_value = *((double*) lammps_extract_compute(Rglmp,"Rg_compute",0,0));
