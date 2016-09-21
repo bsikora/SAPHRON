@@ -211,17 +211,19 @@ int main(int narg, char **arg)
     }
 
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
-    readInputFile(me, Rglmp, "in.RgRun");
+    std::string s = "in.RgRun";
+    readInputFile(me, Rglmp, s);
     Rg_value = lammps_extract_compute(Rglmp,"Rg",0,0);
     rgVector.push_back(Rg_value);
     delete Rglmp;
 
 
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
+    std::string yol = "in.polymer_new2";
     // Read lammps input file (it will read the data file line also)
     // read a sample input file that calculated Rg value and extract that value out and delete that temp
     // instance
-    void readInputFile(me, Newlmp, "in.polymer_new2");
+    void readInputFile(me, Newlmp, yol);
 
 
     // Run lammps for N steps, lammps_loop function deleted
