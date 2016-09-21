@@ -177,6 +177,7 @@ int main(int narg, char **arg)
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
   ffm.AddBondedForceField("Monomer", "Monomer", fene);
   ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
+  ffm.AddBondedForceField("Monomer", "Monomer", debHuc);
   world.AddParticle(&poly);
 
   // Adding titration moves ?????????????????

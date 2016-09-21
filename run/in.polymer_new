@@ -4,6 +4,7 @@ log none
 
 units		lj
 atom_style	full
+special_bonds lj 0.0 1.0 1.0 coul 1.0 1.0 1.0
 
 #######dielectric = 1/(bjurrem_length * KbT), previously 0.8333############
 dielectric	0.35014 
@@ -29,7 +30,6 @@ pair_coeff	* * 1.00 1.00
 pair_modify	shift yes
 
 #######Bonds###########################
-special_bonds	fene
 bond_style	fene
 bond_coeff    1 30 2 1.0 1.0
 #######Interaction Parameters##########
