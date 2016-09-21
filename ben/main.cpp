@@ -214,8 +214,9 @@ int main(int narg, char **arg)
 
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
     readInputFile(Rglmp, s);
-    double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
-    rgVector.push_back(*Rg_value);
+    //double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
+    double Rg_value = *((double*) lammps_extract_compute(lmp,"Rg_compute",0,0));
+    rgVector.push_back(Rg_value);
     delete Rglmp;
 
 
