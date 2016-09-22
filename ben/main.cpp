@@ -318,6 +318,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 
       //Write out datafile that is utilized by lammps input script
       WriteDataFile(natoms, Monomers, image);
+      cout << "I made it here" << endl;
      
 }
 
