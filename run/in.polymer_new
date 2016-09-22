@@ -49,7 +49,12 @@ dump_modify   id scale no
 #################################################
 
 #######Run simulation###########################
-thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul c_myGYR
+compute imageCompute polymer property/atom ix iy iz
+variable ix vector c_imageCompute[1]
+variable iy vector c_imageCompute[2]
+variable iz vector c_imageCompute[3]
+
+thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul c_myGYR v_ix v_iy v_iz
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
 run	1000
