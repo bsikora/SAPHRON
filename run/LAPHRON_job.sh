@@ -13,4 +13,4 @@ module load boost/1.58
 module load ompi/1.8.7-gcc-4.4.7   
 module load intel/15.0
 
-mpiexec -np $NSLOTS ./LAPHRON 1 in.polymer_new 3000
+mpiexec -np $NSLOTS ./LAPHRON 1 in.polymer_new 5000
