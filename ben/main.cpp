@@ -38,7 +38,7 @@ using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
-void WriteDataFile(int numatoms, ParticleList &atoms, int &img);
+void WriteDataFile(int numatoms, ParticleList &atoms, int* img);
 void WriteFractionAnalysisFile(vector<double>& chgVec);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
