@@ -38,7 +38,7 @@ fix	2 all langevin 1.0 1.0 1.0 188801
 ###########Equilibration#################
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
-run	300000
+run	30000
 #########################################
 
 ######Computes, fixes, variables, dumps########
