@@ -38,7 +38,7 @@ fix	2 all langevin 1.0 1.0 1.0 188801
 ###########Equilibration#################
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
-run	30000
+run	100000
 #########################################
 
 ######Computes, fixes, variables, dumps########
@@ -48,13 +48,7 @@ dump          id all atom 1000 1st_run.lammpstrj
 dump_modify   id scale no
 #################################################
 
-#######Run simulation###########################
-
-#compute imageCompute polymer property/atom ix iy iz
-#variable ix equal c_imageCompute[1]
-#variable iy vector c_imageCompute[2]
-#variable iz vector c_imageCompute[3]
-
+#######Run simulation##########################
 thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul c_myGYR
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
