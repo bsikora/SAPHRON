@@ -42,6 +42,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms);
 void WriteFractionAnalysisFile(vector<double>& chgVec);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
+void WritePEAnalysisFile(vector<double>& peVec)
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec); //const SAPHRON::MoveOverride &override
 
 int main(int narg, char **arg)
@@ -53,6 +54,7 @@ int main(int narg, char **arg)
   std::string yol = "in.polymer_new2";
   std::vector<double> chargeVector;
   std::vector<double> rgVector;
+  std::vector<double> peVector;
   ParticleList Monomers;
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
@@ -124,7 +126,7 @@ int main(int narg, char **arg)
   // Create an instance of lammps and run for equilibration
   LAMMPS *Oldlmp;
   LAMMPS *Newlmp;
-  LAMMPS *Rglmp;
+  //LAMMPS *Rglmp;
   if (lammps == 1) Oldlmp = new LAMMPS(0,NULL,comm_lammps);
   else
   {
@@ -216,13 +218,17 @@ int main(int narg, char **arg)
       delete Newlmp;
     }
 
+    /*
     Rglmp = new LAMMPS(0,NULL,comm_lammps);
     cout <<"is it happening here"<<endl;
     readInputFile(Rglmp, s);
     //double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
     double Rg_value = *((double*) lammps_extract_compute(Rglmp,"Rg_compute",0,0));
+    double PE_value = *((double*) lammps_extract_compute(Rglmp,"myPE",0,0));
     rgVector.push_back(Rg_value);
+    peVector.push_back(PE_value);
     delete Rglmp;
+    */
 
 
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
@@ -235,12 +241,19 @@ int main(int narg, char **arg)
     // Run lammps for N steps, lammps_loop function deleted
     Newlmp->input->one("run 1000"); // can be passed as an argument args[3] for example
     Rand _rand(time(NULL));
+
+    double Rg_value = *((double*) lammps_extract_compute(Newlmp,"Rg_compute",0,0));
+    double PE_value = *((double*) lammps_extract_compute(Newlmp,"myPE",0,0));
+    rgVector.push_back(Rg_value);
+    peVector.push_back(PE_value);
+
     cout << "the loop number is "<<loop<<endl;
     loop++;
   }
 
   WriteFractionAnalysisFile(chargeVector);
   WriteRgAnalysisFile(rgVector);
+  WritePEAnalysisFile(peVector)
 
   // close down MPI
   MPI_Finalize();
@@ -420,6 +433,16 @@ void WriteRgAnalysisFile(vector<double>& rgVec)
    std::ofstream ofs;
      ofs.open ("Rg_mu_-4.dat", std::ofstream::out);
     for (std::vector<double>::iterator it = rgVec.begin() ; it != rgVec.end(); ++it)
+    {
+      ofs<<std::to_string(*it)<<std::endl;
+    }
+}
+
+void WritePEAnalysisFile(vector<double>& peVec)
+{
+   std::ofstream ofs;
+     ofs.open ("PE_mu_-4.dat", std::ofstream::out);
+    for (std::vector<double>::iterator it = peVec.begin() ; it != peVec.end(); ++it)
     {
       ofs<<std::to_string(*it)<<std::endl;
     }
