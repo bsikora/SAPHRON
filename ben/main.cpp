@@ -323,7 +323,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 
 
 //  WRITE THE LAMMPS DATA FILE
-void WriteDataFile(int numatoms, ParticleList &atoms, int *img)
+void WriteDataFile(int numatoms, ParticleList &atoms, int* img)
 {
   std::ofstream ofs;
   ofs.open ("data.polymer2", std::ofstream::out);
