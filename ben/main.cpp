@@ -268,7 +268,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 	    cout << "the number of atoms is " << natoms << endl;
 	    double *x = new double[3*natoms];
 	    double *q = new double[natoms];
-      int *image = new int[3*natoms];
+      int *image = new int[natoms];
 	    lammps_gather_atoms(lmp,"x",1,3,x);
 	    lammps_gather_atoms(lmp,"q",1,1,q);
       lammps_gather_atoms(lmp,"image",0,3,image);
@@ -484,5 +484,5 @@ void readInputFile(LAMMPS* &lmp, std::string &inFile)   //int &me,
     }
 }
 
-//sfdbkjnfgjkvnfkdnvfkd
+//sfdbkjnfgjkvnfkdnvfkddjlkvndfvjsdf
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
