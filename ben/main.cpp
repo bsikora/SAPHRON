@@ -269,10 +269,19 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 	    double *x = new double[3*natoms];
 	    double *q = new double[natoms];
       int *image = new int[natoms];
+      int *image_all = new int[3*natoms];
 	    lammps_gather_atoms(lmp,"x",1,3,x);
 	    lammps_gather_atoms(lmp,"q",1,1,q);
       lammps_gather_atoms(lmp,"image",0,3,image);
 	    Rand _rand(time(NULL));
+
+      for (int i = 0; i < count; i=i+3)
+      {
+        image_all[i] = (image[i] & IMGMASK) - IMGMAX;;
+        image_all[i+1] = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
+        image_all[i+2] = (image[i] >> IMG2BITS) - IMGMAX;
+      }
+
 
       // Set position of monomers 
       int j = 0;
@@ -317,7 +326,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
-      WriteDataFile(natoms, Monomers, image);
+      WriteDataFile(natoms, Monomers, image_all);
       cout << "I made it here" << endl;
      
 }
