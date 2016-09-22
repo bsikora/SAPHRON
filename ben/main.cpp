@@ -272,7 +272,7 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       int *image_all = new int[3*natoms];
 	    lammps_gather_atoms(lmp,"x",1,3,x);
 	    lammps_gather_atoms(lmp,"q",1,1,q);
-      lammps_gather_atoms(lmp,"image",0,3,image);
+      lammps_gather_atoms(lmp,"image",0,1,image);
 	    Rand _rand(time(NULL));
 
       for (int i = 0; i < natoms; i++)
