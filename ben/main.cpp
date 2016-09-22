@@ -42,7 +42,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms);
 void WriteFractionAnalysisFile(vector<double>& chgVec);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
-void WritePEAnalysisFile(vector<double>& peVec)
+void WritePEAnalysisFile(vector<double>& peVec);
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec); //const SAPHRON::MoveOverride &override
 
 int main(int narg, char **arg)
