@@ -38,7 +38,7 @@ using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
-void WriteDataFile(int numatoms, ParticleList &atoms);
+void WriteDataFile(int numatoms, ParticleList &atoms, int &img);
 void WriteFractionAnalysisFile(vector<double>& chgVec);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
@@ -268,8 +268,10 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
 	    cout << "the number of atoms is " << natoms << endl;
 	    double *x = new double[3*natoms];
 	    double *q = new double[natoms];
+      int *image = new int[3*natoms];
 	    lammps_gather_atoms(lmp,"x",1,3,x);
 	    lammps_gather_atoms(lmp,"q",1,1,q);
+      lammps_gather_atoms(lmp,"image",0,3,image);
 	    Rand _rand(time(NULL));
 
       // Set position of monomers 
@@ -315,13 +317,13 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
-      WriteDataFile(natoms, Monomers);
+      WriteDataFile(natoms, Monomers, image);
      
 }
 
 
 //  WRITE THE LAMMPS DATA FILE
-void WriteDataFile(int numatoms, ParticleList &atoms)
+void WriteDataFile(int numatoms, ParticleList &atoms, int &img)
 {
   std::ofstream ofs;
   ofs.open ("data.polymer2", std::ofstream::out);
@@ -354,6 +356,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
       ofs<<std::endl;
       int i = 1;
       int ii = 0;
+      int jj = 0;
       while(ii < numlammpsatoms) // this while loop is important
         // this makes sure that you don't read lines corresponding to previous lammps coordinates
       {
@@ -370,8 +373,10 @@ void WriteDataFile(int numatoms, ParticleList &atoms)
         for(auto& x : xyz){
             ofs<<x<<" ";
         }
+        ofs<<image[jj]<<" "<<image[jj+1]<<" "<<image[jj+2];
         ofs<<std::endl;
         i++;
+        jj+=3;
       }
       continue;
     }
