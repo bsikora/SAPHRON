@@ -373,7 +373,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int &img)
         for(auto& x : xyz){
             ofs<<x<<" ";
         }
-        ofs<<image[jj]<<" "<<image[jj+1]<<" "<<image[jj+2];
+        ofs<<img[jj]<<" "<<img[jj+1]<<" "<<img[jj+2];
         ofs<<std::endl;
         i++;
         jj+=3;
