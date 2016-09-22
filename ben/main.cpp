@@ -253,7 +253,7 @@ int main(int narg, char **arg)
 
   WriteFractionAnalysisFile(chargeVector);
   WriteRgAnalysisFile(rgVector);
-  WritePEAnalysisFile(peVector)
+  WritePEAnalysisFile(peVector);
 
   // close down MPI
   MPI_Finalize();
