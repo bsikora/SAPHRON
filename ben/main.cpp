@@ -436,7 +436,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img)
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg)
 {
 	 std::ofstream ofs;
-     ofs.open ("fraction_charged_mu_"+arg+".dat", std::ofstream::out);
+     ofs.open ("fraction_charged_mu_"+std::string(arg)+".dat", std::ofstream::out);
     for (std::vector<double>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
     {
     	ofs<<std::to_string(*it)<<std::endl;
