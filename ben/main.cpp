@@ -188,6 +188,7 @@ int main(int narg, char **arg)
   // proton charge based on dielectric (e*sqrt(2.8) == 1.67)
   AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, atof(arg[6]), time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
+  cout<<"the mu is "<< atof(arg[6])<<endl;
 
   delete [] x;
 
@@ -252,6 +253,13 @@ int main(int narg, char **arg)
   }
 
   WriteFractionAnalysisFile(chargeVector, arg[7]);
+  double d = atof(arg[7]);
+  double e = atof(arg[4]);
+  double f = atof(arg[5]);
+
+  cout<<"the debye len is "<< d<<endl;
+  cout<<"the kappa is "<< e<<endl;
+  cout<<"the coulCut is "<< f<<endl;
   WriteRgAnalysisFile(rgVector);
   WritePEAnalysisFile(peVector);
 
