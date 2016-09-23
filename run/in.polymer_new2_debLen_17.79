@@ -1,0 +1,38 @@
+log none
+
+units		lj
+atom_style	full
+
+dielectric	0.35714
+
+read_data	data.polymer_debLen_17.79
+
+change_box	all boundary p p p
+group		polymer molecule == 1
+
+neighbor	10.0 bin
+
+thermo 1000
+thermo_style multi
+
+#######Interaction Parameters##########
+pair_style	lj/cut/coul/debye 0.06 2.5 88.94
+pair_coeff	* * 1.00 1.00
+pair_modify	shift yes
+special_bonds	lj/coul 1.0 1.0 1.0
+bond_style	harmonic
+bond_coeff	1 1.8 0.0
+#######Interaction Parameters##########
+
+#########Set up system#################
+fix	1 all nve
+fix	2 all langevin 1.0 1.0 1.0 946444
+########################################
+
+compute Rg_compute polymer gyration
+compute myPE all pe
+
+#######Run simulation###########################
+thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul c_Rg_compute c_myPE
+timestep	0.005
+neigh_modify delay 0 every 1 check yes
