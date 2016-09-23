@@ -65,7 +65,7 @@ saph_loop = raw_input("type the num of saphron loops, 10000 ")
 mu = raw_input("type the value of mu, -4.0 ")
 
 debMin = 0.1
-debMax = 100
+debMax = 0.5
 
 sample_file = 'in.polymer_new_template'
 sample_in = open(sample_file,'r')
