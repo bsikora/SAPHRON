@@ -28,7 +28,7 @@
 #include "../src/Worlds/WorldManager.h"
 #include "../src/Properties/Energy.h"
 
-#include "lammps.h"         // these are LAMMPS include files
+#include "lammps.h"
 #include "input.h"
 #include "atom.h"
 #include "library.h"
@@ -37,7 +37,7 @@ using namespace std;
 using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
-// forward declaration fkjldfdvfjkndfvjkndfvjkn
+// forward declaration
 void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg);
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
@@ -45,13 +45,11 @@ void WriteRgAnalysisFile(vector<double>& rgVec, char* arg);
 void WritePEAnalysisFile(vector<double>& peVec, char* arg);
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg); //const SAPHRON::MoveOverride &override
 
+// Main code
 int main(int narg, char **arg)
 {
-	/****************TWO THINGS TO FIX:- FORCEFIELD PARAMETERS AND THE WHILE LOOP*/
 
-// REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
-  std::string s = "in.RgRun";
-  std::string yol = "in.polymer_new2_debLen_"+std::string(arg[7]);  // chgange
+  std::string yol = "in.polymer_new2_debLen_"+std::string(arg[7]); 
   std::vector<double> chargeVector;
   std::vector<double> rgVector;
   std::vector<double> peVector;
@@ -59,13 +57,12 @@ int main(int narg, char **arg)
   ForceFieldManager ffm;
   SAPHRON::Particle poly("Polymer");
   double rcut = 300.0;
-  World world(1000.0, 1000.0, 1000.0, rcut, 46732); // same as input script
+  World world(1000.0, 1000.0, 1000.0, rcut, 46732); // same as lammps input data file
   WorldManager WM;
   WM.AddWorld(&world);
   MoveManager MM (time(NULL));
 
   LennardJonesTSFF lj(1.0, 1.0, {2.5});
-  //FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
   Harmonic harmo(1.8, 0.0);
   DebyeHuckelFF debHuc(atof(arg[4]), {atof(arg[5])}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
@@ -126,7 +123,7 @@ int main(int narg, char **arg)
   // Create an instance of lammps and run for equilibration
   LAMMPS *Oldlmp;
   LAMMPS *Newlmp;
-  //LAMMPS *Rglmp;
+
   if (lammps == 1) Oldlmp = new LAMMPS(0,NULL,comm_lammps);
   else
   {
@@ -184,7 +181,7 @@ int main(int narg, char **arg)
   ffm.AddBondedForceField("Monomer", "Monomer", debHuc);
   world.AddParticle(&poly);
 
-  // Adding titration moves ?????????????????
+  // Adding titration moves
   // proton charge based on dielectric (e*sqrt(2.8) == 1.67)
   AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, atof(arg[6]), time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
@@ -199,15 +196,13 @@ int main(int narg, char **arg)
 
 
 
-
-  
   std::string::size_type sz;
   int numLoops = std::stoi(arg[3],&sz);
   int loop = 0;
   // WHILE LOOP (alternating between saphron and lammps)
   while(loop < numLoops)   
   {
-    // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
+    // Run saphron. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
     {
       saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7]); // SAPHRON::MoveOverride::None
@@ -219,28 +214,10 @@ int main(int narg, char **arg)
       delete Newlmp;
     }
 
-    /*
-    Rglmp = new LAMMPS(0,NULL,comm_lammps);
-    cout <<"is it happening here"<<endl;
-    readInputFile(Rglmp, s);
-    //double *Rg_value = lammps_extract_compute(Rglmp,"Rg_compute",0,0);
-    double Rg_value = *((double*) lammps_extract_compute(Rglmp,"Rg_compute",0,0));
-    double PE_value = *((double*) lammps_extract_compute(Rglmp,"myPE",0,0));
-    rgVector.push_back(Rg_value);
-    peVector.push_back(PE_value);
-    delete Rglmp;
-    */
-
-
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
-    // Read lammps input file (it will read the data file line also)
-    // read a sample input file that calculated Rg value and extract that value out and delete that temp
-    // instance
     readInputFile(Newlmp, yol);
 
-
-    // Run lammps for N steps, lammps_loop function deleted
-    Newlmp->input->one("run 1000"); // can be passed as an argument args[3] for example
+    Newlmp->input->one("run 1000");
     Rand _rand(time(NULL));
 
     double Rg_value = *((double*) lammps_extract_compute(Newlmp,"Rg_compute",0,0));
@@ -253,15 +230,18 @@ int main(int narg, char **arg)
   }
 
   WriteFractionAnalysisFile(chargeVector, arg[7]);
+  WriteRgAnalysisFile(rgVector, arg[7]);
+  WritePEAnalysisFile(peVector, arg[7]);
+  
+  // JUST PRINTING FOR CONFIRMATION
   double d = atof(arg[7]);
   double e = atof(arg[4]);
   double f = atof(arg[5]);
-
+  double g = atof(arg[6]);
   cout<<"the debye len is "<< d<<endl;
   cout<<"the kappa is "<< e<<endl;
   cout<<"the coulCut is "<< f<<endl;
-  WriteRgAnalysisFile(rgVector, arg[7]);
-  WritePEAnalysisFile(peVector, arg[7]);
+  cout<<"the mu is "<< g<<endl;
 
   // close down MPI
   MPI_Finalize();
@@ -271,7 +251,7 @@ int main(int narg, char **arg)
 // FUNCTION
 void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg){ // const SAPHRON::MoveOverride &override
 
-	    cout<<"I am here"<<endl;
+	    cout<<"I am in saphron loop here"<<endl;
 	    int natoms = static_cast<int> (lmp->atom->natoms);
 	    cout << "the number of atoms is " << natoms << endl;
 	    double *x = new double[3*natoms];
@@ -330,13 +310,10 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       		intCharge++;
       	}
       }
-      //cout<<"the fraction charged is "<< ((double)intCharge)/intMonomers << endl;
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
-      WriteDataFile(natoms, Monomers, image_all, arg);
-      cout << "I made it here" << endl;
-     
+      WriteDataFile(natoms, Monomers, image_all, arg);    
 }
 
 
@@ -476,7 +453,7 @@ void readInputFile(LAMMPS* &lmp, std::string &inFile)   //int &me,
     FILE *fp;
     //if (me == 0) {
       fp = fopen(inFile.c_str(),"r");
-      cout<<"what is going on"<<inFile.c_str()<<endl;
+      cout<<"file name passed to readInputFile "<<inFile.c_str()<<endl;
       if (fp == NULL) {
         printf("ERROR: Could not open LAMMPS input script\n");
         MPI_Abort(MPI_COMM_WORLD,1);
@@ -501,5 +478,4 @@ void readInputFile(LAMMPS* &lmp, std::string &inFile)   //int &me,
     }
 }
 
-//sfdbkjnfgjkvnfkdnvfkddjlkvndfvjsdf
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
