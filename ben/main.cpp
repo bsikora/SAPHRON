@@ -38,12 +38,12 @@ using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
-void WriteDataFile(int numatoms, ParticleList &atoms, int* img);
+void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg);
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
-void WriteRgAnalysisFile(vector<double>& rgVec);
-void WritePEAnalysisFile(vector<double>& peVec);
-void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec); //const SAPHRON::MoveOverride &override
+void WriteRgAnalysisFile(vector<double>& rgVec, char* arg);
+void WritePEAnalysisFile(vector<double>& peVec, char* arg);
+void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg); //const SAPHRON::MoveOverride &override
 
 int main(int narg, char **arg)
 {
@@ -51,7 +51,7 @@ int main(int narg, char **arg)
 
 // REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
   std::string s = "in.RgRun";
-  std::string yol = "in.polymer_new2";
+  std::string yol = "in.polymer_new2_deblen_"+std::string(arg[7]);  // chgange
   std::vector<double> chargeVector;
   std::vector<double> rgVector;
   std::vector<double> peVector;
@@ -210,12 +210,12 @@ int main(int narg, char **arg)
     // Run saphron for M steps. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
     {
-      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector); // SAPHRON::MoveOverride::None
+      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7]); // SAPHRON::MoveOverride::None
       delete Oldlmp;
     }
     else
     {
-      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector); // SAPHRON::MoveOverride::None
+      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7]); // SAPHRON::MoveOverride::None
       delete Newlmp;
     }
 
@@ -260,8 +260,8 @@ int main(int narg, char **arg)
   cout<<"the debye len is "<< d<<endl;
   cout<<"the kappa is "<< e<<endl;
   cout<<"the coulCut is "<< f<<endl;
-  WriteRgAnalysisFile(rgVector);
-  WritePEAnalysisFile(peVector);
+  WriteRgAnalysisFile(rgVector, arg[7]);
+  WritePEAnalysisFile(peVector, arg[7]);
 
   // close down MPI
   MPI_Finalize();
@@ -269,7 +269,7 @@ int main(int narg, char **arg)
 
 
 // FUNCTION
-void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec){ // const SAPHRON::MoveOverride &override
+void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg){ // const SAPHRON::MoveOverride &override
 
 	    cout<<"I am here"<<endl;
 	    int natoms = static_cast<int> (lmp->atom->natoms);
@@ -334,17 +334,17 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
-      WriteDataFile(natoms, Monomers, image_all);
+      WriteDataFile(natoms, Monomers, image_all, arg);
       cout << "I made it here" << endl;
      
 }
 
 
 //  WRITE THE LAMMPS DATA FILE
-void WriteDataFile(int numatoms, ParticleList &atoms, int* img)
+void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg)
 {
   std::ofstream ofs;
-  ofs.open ("data.polymer2", std::ofstream::out);
+  ofs.open ("data.polymer_debLen_"+std::string(arg), std::ofstream::out);
   int numlammpsatoms;
   std::string garbage;
 
@@ -444,27 +444,27 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img)
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg)
 {
 	 std::ofstream ofs;
-     ofs.open ("fraction_charged_mu_"+std::string(arg)+".dat", std::ofstream::out);
+     ofs.open ("fraction_charged_debyeLen_"+std::string(arg)+".dat", std::ofstream::out);
     for (std::vector<double>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
     {
     	ofs<<std::to_string(*it)<<std::endl;
     }
 }
 
-void WriteRgAnalysisFile(vector<double>& rgVec)
+void WriteRgAnalysisFile(vector<double>& rgVec, char* arg)
 {
    std::ofstream ofs;
-     ofs.open ("Rg_mu_-4.dat", std::ofstream::out);
+     ofs.open ("Rg_debyeLen_"+std::string(arg)+".dat", std::ofstream::out);
     for (std::vector<double>::iterator it = rgVec.begin() ; it != rgVec.end(); ++it)
     {
       ofs<<std::to_string(*it)<<std::endl;
     }
 }
 
-void WritePEAnalysisFile(vector<double>& peVec)
+void WritePEAnalysisFile(vector<double>& peVec, char* arg)
 {
    std::ofstream ofs;
-     ofs.open ("PE_mu_-4.dat", std::ofstream::out);
+     ofs.open ("PE_debyeLen_"+std::string(arg)+".dat", std::ofstream::out);
     for (std::vector<double>::iterator it = peVec.begin() ; it != peVec.end(); ++it)
     {
       ofs<<std::to_string(*it)<<std::endl;
