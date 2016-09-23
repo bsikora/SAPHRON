@@ -51,7 +51,7 @@ int main(int narg, char **arg)
 
 // REDEFINE SYSTEM SIZE BASED ON WHAT IS IN THE INPUT SCRIPT
   std::string s = "in.RgRun";
-  std::string yol = "in.polymer_new2_deblen_"+std::string(arg[7]);  // chgange
+  std::string yol = "in.polymer_new2_debLen_"+std::string(arg[7]);  // chgange
   std::vector<double> chargeVector;
   std::vector<double> rgVector;
   std::vector<double> peVector;
