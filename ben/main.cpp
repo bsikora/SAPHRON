@@ -39,7 +39,7 @@ using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
 void WriteDataFile(int numatoms, ParticleList &atoms, int* img);
-void WriteFractionAnalysisFile(vector<double>& chgVec, std::string& arg);
+void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
 void WritePEAnalysisFile(vector<double>& peVec);
@@ -433,7 +433,7 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img)
   }
 }
 
-void WriteFractionAnalysisFile(vector<double>& chgVec std::string& arg)
+void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg)
 {
 	 std::ofstream ofs;
      ofs.open ("fraction_charged_mu_"+arg+".dat", std::ofstream::out);
