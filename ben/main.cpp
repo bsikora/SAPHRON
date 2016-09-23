@@ -68,8 +68,7 @@ int main(int narg, char **arg)
   //FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
   Harmonic harmo(1.8, 0.0);
   DebyeHuckelFF debHuc(atof(arg[4]), {atof(arg[5])}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
-  cout<<"the kappa is "<< atof(arg[4])<<endl;
-  cout<<"the coulCut is "<< atof(arg[5])<<endl;
+
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
   //AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10,time(NULL));
@@ -254,7 +253,13 @@ int main(int narg, char **arg)
   }
 
   WriteFractionAnalysisFile(chargeVector, arg[7]);
-  cout<<"the debye len is "<< atof(arg[7])<<endl;
+  double d = atof(arg[7]);
+  double e = atof(arg[4]);
+  double f = atof(arg[5]);
+
+  cout<<"the debye len is "<< d<<endl;
+  cout<<"the kappa is "<< e<<endl;
+  cout<<"the coulCut is "<< f<<endl;
   WriteRgAnalysisFile(rgVector);
   WritePEAnalysisFile(peVector);
 
