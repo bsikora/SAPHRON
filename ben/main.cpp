@@ -39,7 +39,7 @@ using namespace LAMMPS_NS;
 
 // forward declaration fkjldfdvfjkndfvjkndfvjkn
 void WriteDataFile(int numatoms, ParticleList &atoms, int* img);
-void WriteFractionAnalysisFile(vector<double>& chgVec);
+void WriteFractionAnalysisFile(vector<double>& chgVec, std::string& arg);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec);
 void WritePEAnalysisFile(vector<double>& peVec);
@@ -67,7 +67,7 @@ int main(int narg, char **arg)
   LennardJonesTSFF lj(1.0, 1.0, {2.5});
   //FENEFF fene(1.0, 1.0, 30.0, 2.0); //(epsilon, sigma, k, rmax)
   Harmonic harmo(1.8, 0.0);
-  DebyeHuckelFF debHuc(10, {0.5}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
+  DebyeHuckelFF debHuc(atof(arg[4]), {atof(arg[5])}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
@@ -186,7 +186,7 @@ int main(int narg, char **arg)
 
   // Adding titration moves ?????????????????
   // proton charge based on dielectric (e*sqrt(2.8) == 1.67)
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, -4.0, time(NULL));  // proton charge, mu
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, atof(arg[6]), time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
 
   delete [] x;
@@ -251,7 +251,7 @@ int main(int narg, char **arg)
     loop++;
   }
 
-  WriteFractionAnalysisFile(chargeVector);
+  WriteFractionAnalysisFile(chargeVector, arg[7]);
   WriteRgAnalysisFile(rgVector);
   WritePEAnalysisFile(peVector);
 
@@ -433,10 +433,10 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img)
   }
 }
 
-void WriteFractionAnalysisFile(vector<double>& chgVec)
+void WriteFractionAnalysisFile(vector<double>& chgVec std::string& arg)
 {
 	 std::ofstream ofs;
-     ofs.open ("fraction_charged_mu_-4.dat", std::ofstream::out);
+     ofs.open ("fraction_charged_mu_"+arg+".dat", std::ofstream::out);
     for (std::vector<double>::iterator it = chgVec.begin() ; it != chgVec.end(); ++it)
     {
     	ofs<<std::to_string(*it)<<std::endl;
