@@ -94,7 +94,7 @@ set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/extern)
 # http://stackoverflow.com/questions/9689183/cmake-googletest
 ExternalProject_Add(
 	googletest
-	URL http://googletest.googlecode.com/files/gtest-1.6.0.zip
+	URL /home/bsikora/Desktop/release-1.6.0.zip
 	# TIMEOUT 10
 	# # Force separate output paths for debug and release builds to allow easy
 	# # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
@@ -222,6 +222,11 @@ set(TEST_DEPS
 	${GTEST_LIBRARY_PATH} 
 	${GTEST_LIBRARY_MAIN_PATH}
 	libsaphron)
+
+add_executable(LAPHRON LAPHRON/main.cpp)
+target_link_libraries(LAPHRON ${SAPH_LIBS} libsaphron /home/bsikora/Documents/Codes/LAMMPS/src/liblammps.a)
+target_include_directories(LAPHRON PRIVATE /home/bsikora/Documents/Codes/LAMMPS/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(LAPHRON libsaphron)
 
 add_executable(ConstraintTests test/ConstraintTests.cpp)
 target_link_libraries(ConstraintTests ${TEST_DEPS})
