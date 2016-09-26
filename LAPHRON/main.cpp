@@ -326,13 +326,13 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg)
   std::string garbage;
 
   //Read in file and change what is needed
-  std::ifstream infile("data.polymer");
+  std::ifstream infile("data.trial");
   std::string line;
   while (std::getline(infile, line))
   {
-
     if(line.empty())
       continue;
+
     std::istringstream iss(line);
     std::string s2 = iss.str();
     
