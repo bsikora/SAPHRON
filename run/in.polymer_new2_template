@@ -3,7 +3,7 @@ log none
 units		lj
 atom_style	full
 
-dielectric	0.35714
+#dielectric	0.35714
 
 read_data	data.polymer2
 
