@@ -17,7 +17,7 @@ thermo_style multi
 
 #######Interaction Parameters##########
 pair_style	lj/cut/coul/debye 0.05 2.5 100.00
-pair_coeff	* * 1.00 1.00
+pair_coeff	* * 1.80 1.00
 pair_modify	shift yes
 special_bonds	lj/coul 1.0 1.0 1.0
 bond_style	harmonic
@@ -33,8 +33,6 @@ compute Rg_compute polymer gyration
 compute myPE all pe
 
 #######Run simulation###########################
-dump          id all atom 100 deb_20.lammpstrj
-dump_modify   id scale no 
 thermo_style    custom step temp etotal ke pe epair ebond evdwl ecoul c_Rg_compute c_myPE
 timestep	0.005
 neigh_modify delay 0 every 1 check yes

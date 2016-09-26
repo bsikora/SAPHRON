@@ -17,7 +17,7 @@ thermo_style multi
 
 #######Interaction Parameters##########
 pair_style	lj/cut/coul/debye 0.06 2.5 77.89
-pair_coeff	* * 1.00 1.00
+pair_coeff	* * 1.80 1.00
 pair_modify	shift yes
 special_bonds	lj/coul 1.0 1.0 1.0
 bond_style	harmonic

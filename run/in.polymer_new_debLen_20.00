@@ -21,7 +21,7 @@ thermo_style multi
 
 #######Interaction Parameters##########
 pair_style	lj/cut/coul/debye 0.05 2.5 100.00
-pair_coeff	* * 1.00 1.00
+pair_coeff	* * 1.80 1.00
 pair_modify	shift yes
 special_bonds	lj/coul 1.0 1.0 1.0
 bond_style	harmonic
@@ -38,7 +38,7 @@ fix	2 all langevin 1.0 1.0 1.0 946445
 ###########Equilibration#################
 timestep	0.005
 neigh_modify delay 0 every 1 check yes
-run	100000
+run	300000
 #########################################
 
 ######Computes, fixes, variables, dumps########
