@@ -3,8 +3,6 @@ log none
 units		lj
 atom_style	full
 
-#dielectric	0.35714
-
 read_data	data.polymer2
 
 change_box	all boundary p p p
@@ -17,11 +15,11 @@ thermo_style multi
 
 #######Interaction Parameters##########
 pair_style	lj/cut/coul/debye 10.0 2.5 0.5
-pair_coeff	* * 1.00 1.00
+pair_coeff	* * 1.80 1.00
 pair_modify	shift yes
 special_bonds	lj/coul 1.0 1.0 1.0
-bond_style	harmonic
-bond_coeff	1 1.8 0.0
+bond_style      fene
+bond_coeff    1 7 2 0 1.0
 #######Interaction Parameters##########
 
 #########Set up system#################
