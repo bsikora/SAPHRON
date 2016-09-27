@@ -63,8 +63,9 @@ int main(int narg, char **arg)
   MoveManager MM (time(NULL));
 
   LennardJonesTSFF lj(1.0, 1.0, {2.5});
-  Harmonic harmo(1.8, 0.0);
+  FENEFF fene(0, 1.0, 7.0, 2.0);
   DebyeHuckelFF debHuc(atof(arg[4]), {atof(arg[5])}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
+
 
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
@@ -175,10 +176,9 @@ int main(int narg, char **arg)
     poly.AddChild(c);
   }
 
+  ffm.SetElectrostaticForcefield(debHuc);
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
-  ffm.AddBondedForceField("Monomer", "Monomer", harmo); // changed bonded force field
-  ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
-  ffm.AddBondedForceField("Monomer", "Monomer", debHuc);
+  ffm.AddBondedForceField("Monomer", "Monomer", fene); // changed bonded force field
   world.AddParticle(&poly);
 
   // Adding titration moves
