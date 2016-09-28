@@ -58,6 +58,7 @@ int main(int narg, char **arg)
   SAPHRON::Particle poly("Polymer");
   double rcut = 300.0;
   World world(1000.0, 1000.0, 1000.0, rcut, 46732); // same as lammps input data file
+  world.SetTemperature(1.0);
   WorldManager WM;
   WM.AddWorld(&world);
   MoveManager MM (time(NULL));
