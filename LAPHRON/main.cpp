@@ -63,8 +63,8 @@ int main(int narg, char **arg)
   WM.AddWorld(&world);
   MoveManager MM (time(NULL));
 
-  LennardJonesTSFF lj(1.0, 1.0, {2.5});
-  FENEFF fene(0, 1.0, 7.0, 2.0);
+  LennardJonesTSFF lj(0.80, 1.0, {2.5});
+  FENEFF fene(0, 1.0, 8.75, 2.0);
   DebyeHuckelFF debHuc(atof(arg[4]), {atof(arg[5])}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
 
@@ -183,8 +183,8 @@ int main(int narg, char **arg)
   world.AddParticle(&poly);
 
   // Adding titration moves
-  // proton charge based on dielectric (e*sqrt(2.8) == 1.67)
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, atof(arg[6]), time(NULL));  // proton charge, mu
+  // proton charge based on dielectric (e*sqrt(1.1) == 1.04)
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.04, atof(arg[6]), time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
   cout<<"the mu is "<< atof(arg[6])<<endl;
 
@@ -218,7 +218,7 @@ int main(int narg, char **arg)
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
     readInputFile(Newlmp, yol);
 
-    Newlmp->input->one("run 1000");
+    Newlmp->input->one("run 100");
     Rand _rand(time(NULL));
 
     double Rg_value = *((double*) lammps_extract_compute(Newlmp,"Rg_compute",0,0));
@@ -228,11 +228,13 @@ int main(int narg, char **arg)
 
     cout << "the loop number is "<<loop<<endl;
     loop++;
+    
+    WriteFractionAnalysisFile(chargeVector, arg[7]);
+    WriteRgAnalysisFile(rgVector, arg[7]);
+    WritePEAnalysisFile(peVector, arg[7]);
   }
 
-  WriteFractionAnalysisFile(chargeVector, arg[7]);
-  WriteRgAnalysisFile(rgVector, arg[7]);
-  WritePEAnalysisFile(peVector, arg[7]);
+
   
   // JUST PRINTING FOR CONFIRMATION
   double d = atof(arg[7]);
