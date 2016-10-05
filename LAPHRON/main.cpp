@@ -38,12 +38,12 @@ using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
 // forward declaration
-void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg);
+void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg, int &loop);
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
 void WriteRgAnalysisFile(vector<double>& rgVec, char* arg);
 void WritePEAnalysisFile(vector<double>& peVec, char* arg);
-void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg); //const SAPHRON::MoveOverride &override
+void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg, int &loop); //const SAPHRON::MoveOverride &override
 
 // Main code
 int main(int narg, char **arg)
@@ -63,14 +63,15 @@ int main(int narg, char **arg)
   WM.AddWorld(&world);
   MoveManager MM (time(NULL));
 
-  LennardJonesTSFF lj(0.80, 1.0, {2.5});
-  FENEFF fene(0, 1.0, 8.75, 2.0);
+  LennardJonesTSFF lj(1.0, 1.0, {2.5});
+  FENEFF fene(0, 1.0, 7.0, 2.0);
   DebyeHuckelFF debHuc(atof(arg[4]), {atof(arg[5])}); // same as lammps input ;  kappa (1/deb len), coul cutoff (5*deb len)
 
 
   //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,time(NULL));
   //DeleteParticleMove Del({{"Monomer"}},false,time(NULL));
   //AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10,time(NULL));
+
   AnnealChargeMove AnnMv({{"Polymer"}}, time(NULL));
   MM.AddMove(&AnnMv);
 
@@ -179,7 +180,12 @@ int main(int narg, char **arg)
 
   ffm.SetElectrostaticForcefield(debHuc);
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
+  ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
+
+  ffm.AddBondedForceField("Monomer", "Monomer", lj); // changed bonded force field
   ffm.AddBondedForceField("Monomer", "Monomer", fene); // changed bonded force field
+  ffm.AddBondedForceField("Monomer", "Monomer", debHuc); // changed bonded force field
+
   world.AddParticle(&poly);
 
   // Adding titration moves
@@ -206,12 +212,12 @@ int main(int narg, char **arg)
     // Run saphron. Includes energy evaluation and create a lammps data file within this function
     if(loop == 0)
     {
-      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7]); // SAPHRON::MoveOverride::None
+      saphronLoop(Oldlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7], loop); // SAPHRON::MoveOverride::None
       delete Oldlmp;
     }
     else
     {
-      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7]); // SAPHRON::MoveOverride::None
+      saphronLoop(Newlmp, lammps, MM, WM, ffm, Monomers, world, chargeVector, arg[7], loop); // SAPHRON::MoveOverride::None
       delete Newlmp;
     }
 
@@ -252,7 +258,7 @@ int main(int narg, char **arg)
 
 
 // FUNCTION
-void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg){ // const SAPHRON::MoveOverride &override
+void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, ParticleList &Monomers, World &world, vector<double>& chgVec, char* arg, int &loop){ // const SAPHRON::MoveOverride &override
 
 	    cout<<"I am in saphron loop here"<<endl;
 	    int natoms = static_cast<int> (lmp->atom->natoms);
@@ -316,12 +322,12 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       chgVec.push_back((double)intCharge/intMonomers);
 
       //Write out datafile that is utilized by lammps input script
-      WriteDataFile(natoms, Monomers, image_all, arg);    
+      WriteDataFile(natoms, Monomers, image_all, arg, loop);    
 }
 
 
 //  WRITE THE LAMMPS DATA FILE
-void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg)
+void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg, int &loop)
 {
   std::ofstream ofs;
   ofs.open ("data.polymer_debLen_"+std::string(arg), std::ofstream::out);
@@ -418,6 +424,21 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg)
     }
 
     ofs<<iss.str()<<std::endl;
+  }
+  ofs.close();
+
+
+
+  std::ofstream ofs2;
+  ofs2.open ("copy_data_file_debyeLen_"+std::string(arg)+"_"+std::to_string(loop)+".dat", std::ofstream::out);
+  std::ifstream infile2("data.polymer_debLen_"+std::string(arg));
+  while (std::getline(infile2, line))
+  {
+    //if(line.empty())
+      //continue;
+
+    std::istringstream iss(line);
+    ofs2<<iss.str()<<std::endl;
   }
 }
 
