@@ -4,6 +4,7 @@
 #include <chrono>
 #include <ctime>
 #include "stdio.h"
+#include <math.h> 
 #include "stdlib.h"
 #include "string.h"
 #include <string>
@@ -38,6 +39,8 @@ using namespace SAPHRON;
 using namespace LAMMPS_NS;
 
 // forward declaration
+void WriteCodedRgAnalysisFile(vector<double>& rgVec, char* arg);
+double calculateRg(LAMMPS* &lmp);
 void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg, int &loop);
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg);
 void readInputFile(LAMMPS* &lmp, std::string &inFile);
@@ -52,6 +55,7 @@ int main(int narg, char **arg)
   std::string yol = "in.polymer_new2_debLen_"+std::string(arg[7]); 
   std::vector<double> chargeVector;
   std::vector<double> rgVector;
+  std::vector<double> codedrgVector;
   std::vector<double> peVector;
   ParticleList Monomers;
   ForceFieldManager ffm;
@@ -180,7 +184,6 @@ int main(int narg, char **arg)
 
   ffm.SetElectrostaticForcefield(debHuc);
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
-  ffm.AddNonBondedForceField("Monomer", "Monomer", debHuc);
 
   ffm.AddBondedForceField("Monomer", "Monomer", lj); // changed bonded force field
   ffm.AddBondedForceField("Monomer", "Monomer", fene); // changed bonded force field
@@ -189,9 +192,10 @@ int main(int narg, char **arg)
   world.AddParticle(&poly);
 
   // Adding titration moves
-  // proton charge based on dielectric (e*sqrt(1.1) == 1.04)
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.04, atof(arg[6]), time(NULL));  // proton charge, mu
+  // proton charge based on bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, atof(arg[6]), time(NULL));  // proton charge, mu
   MM.AddMove(&AcidTitMv);
+
   cout<<"the mu is "<< atof(arg[6])<<endl;
 
   delete [] x;
@@ -224,11 +228,15 @@ int main(int narg, char **arg)
     Newlmp = new LAMMPS(0,NULL,comm_lammps);
     readInputFile(Newlmp, yol);
 
-    Newlmp->input->one("run 100");
+    Newlmp->input->one("run 1000");
     Rand _rand(time(NULL));
 
     double Rg_value = *((double*) lammps_extract_compute(Newlmp,"Rg_compute",0,0));
     double PE_value = *((double*) lammps_extract_compute(Newlmp,"myPE",0,0));
+    double coded_Rg_value = calculateRg(Newlmp);
+	cout<< "the coded Rg is "<< coded_Rg_value<<endl;
+
+    codedrgVector.push_back(coded_Rg_value);
     rgVector.push_back(Rg_value);
     peVector.push_back(PE_value);
 
@@ -237,8 +245,14 @@ int main(int narg, char **arg)
     
     WriteFractionAnalysisFile(chargeVector, arg[7]);
     WriteRgAnalysisFile(rgVector, arg[7]);
+    WriteCodedRgAnalysisFile(codedrgVector, arg[7]);
     WritePEAnalysisFile(peVector, arg[7]);
+
+    
   }
+  Newlmp->input->one("log log.saph_loop_debLen_0.01");
+  Newlmp->input->one("run 500000");
+  delete Newlmp;
 
 
   
@@ -301,12 +315,14 @@ void saphronLoop(LAMMPS* &lmp, int &lammps, MoveManager &MM, WorldManager &WM, F
       world.UpdateNeighborList();
       delete [] x;
 
+
       // Perform moves for M steps ()
       for(int i=0; i<30;i++)
       {
         auto* move = MM.SelectRandomMove();
         move->Perform(&WM,&ffm,MoveOverride::None); // performs all the moves like dabbing
       }
+
 
     // FRACTION OF CHARGE CALCULATION
     int intCharge = 0;
@@ -428,18 +444,21 @@ void WriteDataFile(int numatoms, ParticleList &atoms, int* img, char* arg, int &
   ofs.close();
 
 
-
-  std::ofstream ofs2;
-  ofs2.open ("copy_data_file_debyeLen_"+std::string(arg)+"_"+std::to_string(loop)+".dat", std::ofstream::out);
-  std::ifstream infile2("data.polymer_debLen_"+std::string(arg));
-  while (std::getline(infile2, line))
+  if (loop == 5000 || loop == 15000 || loop == 20999 || loop == 40000 || loop == 49999)
   {
-    //if(line.empty())
-      //continue;
+  	  std::ofstream ofs2;
+  	  ofs2.open ("copy_data_file_debyeLen_"+std::string(arg)+"_"+std::to_string(loop)+".dat", std::ofstream::out);
+      std::ifstream infile2("data.polymer_debLen_"+std::string(arg));
+	  while (std::getline(infile2, line))
+	  {
+	    //if(line.empty())
+	      //continue;
 
-    std::istringstream iss(line);
-    ofs2<<iss.str()<<std::endl;
+	    std::istringstream iss(line);
+	    ofs2<<iss.str()<<std::endl;
+	  }
   }
+
 }
 
 void WriteFractionAnalysisFile(vector<double>& chgVec, char* arg)
@@ -456,6 +475,16 @@ void WriteRgAnalysisFile(vector<double>& rgVec, char* arg)
 {
    std::ofstream ofs;
      ofs.open ("Rg_debyeLen_"+std::string(arg)+".dat", std::ofstream::out);
+    for (std::vector<double>::iterator it = rgVec.begin() ; it != rgVec.end(); ++it)
+    {
+      ofs<<std::to_string(*it)<<std::endl;
+    }
+}
+
+void WriteCodedRgAnalysisFile(vector<double>& rgVec, char* arg)
+{
+   std::ofstream ofs;
+     ofs.open ("Coded_Rg_debyeLen_"+std::string(arg)+".dat", std::ofstream::out);
     for (std::vector<double>::iterator it = rgVec.begin() ; it != rgVec.end(); ++it)
     {
       ofs<<std::to_string(*it)<<std::endl;
@@ -500,6 +529,82 @@ void readInputFile(LAMMPS* &lmp, std::string &inFile)   //int &me,
       MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
       lmp->input->one(line);
     }
+}
+
+double calculateRg(LAMMPS* &lmp)
+{
+      int natoms = static_cast<int> (lmp->atom->natoms);
+
+      double *x = new double[3*natoms];
+      double *x_unwrapped = new double[3*natoms];
+      double *diff_r_rcm = new double[3*natoms];
+      double *dot_prod_array = new double[natoms];
+      int *image = new int[natoms];
+      int *image_all = new int[3*natoms];
+
+      lammps_gather_atoms(lmp,"x",1,3,x);
+      lammps_gather_atoms(lmp,"image",0,1,image);
+      Rand _rand(time(NULL));
+
+      // GET ALL THE IMAGE FLAGS IN A 1D ARRAY
+      for (int i = 0; i < natoms; i++)
+      {
+        image_all[i*3] = (image[i] & IMGMASK) - IMGMAX;;
+        image_all[i*3+1] = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
+        image_all[i*3+2] = (image[i] >> IMG2BITS) - IMGMAX;
+      }
+
+
+      // CENTER OF MASS CALCULATION
+      double x_sum = 0;
+      double y_sum = 0;
+      double z_sum = 0;
+
+      double x_com = 0;
+      double y_com = 0;
+      double z_com = 0;
+
+      double tot_mass = natoms; // since mass 1
+      double box_length = 1000; // since cubic box
+
+      for(int i=0; i<natoms*3;i=i+3){
+            x_sum += x[i] + image_all[i]*box_length;
+            y_sum += x[i+1] + image_all[i+1]*box_length;
+            z_sum += x[i+2] + image_all[i+2]*box_length;
+      }
+
+      x_com = x_sum/tot_mass;
+      y_com = y_sum/tot_mass;
+      z_com = z_sum/tot_mass;
+
+
+      // DOT PRODUCT CALCULATION
+      int j = 0;
+      for(int i=0; i<natoms*3;i=i+3){
+            x_unwrapped[i] = x[i] + image_all[i]*box_length;
+            x_unwrapped[i+1] = x[i+1] + image_all[i+1]*box_length;
+            x_unwrapped[i+2] = x[i+2] + image_all[i+2]*box_length;
+
+            diff_r_rcm[i] = x_unwrapped[i] - x_com;
+            diff_r_rcm[i+1] = x_unwrapped[i+1] - y_com;
+            diff_r_rcm[i+2] = x_unwrapped[i+2] - z_com;
+
+            dot_prod_array[j] = diff_r_rcm[i]*diff_r_rcm[i] + diff_r_rcm[i+1]*diff_r_rcm[i+1] + diff_r_rcm[i+2]*diff_r_rcm[i+2];
+            j++;
+      }
+
+
+      // FINAL RG CALCULATION
+      double Rg_summation = 0;
+      double Rg = 0;
+      for (int i = 0; i < natoms; ++i)
+      {
+      	Rg_summation += dot_prod_array[i];
+      }
+
+      Rg = sqrt(Rg_summation/tot_mass);
+
+      return Rg;  
 }
 
 //1 molecule-tag atom-type q x y z   (FOR ATOM STYLE FULL)
