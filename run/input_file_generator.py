@@ -88,7 +88,7 @@ for i in range(len(input_file_list)):
      write_file5.write("\n")
 write_file5.close()
 
-write_file5 = open(path+"data.trial",'w')
+write_file5 = open(path+"data.template",'w')
 for line in ini_data_lines:
      write_file5.write(line)
 write_file5.close()
