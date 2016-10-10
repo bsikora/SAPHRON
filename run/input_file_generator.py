@@ -1,27 +1,6 @@
 import os
 
 
-def writeInDotFiles(in_list, debyeLen, coul_cut, seed_num, kappa, path):
-	line_list = list(in_list)
-	for i in range(len(line_list)):
-		if ("pair_style	lj/cut/coul/debye" in line_list[i]):
-			line_list[i] = 'pair_style	lj/cut/coul/debye {0} 2.5 {1}\n'.format(kappa, coul_cut)
-		if ("velocity" in line_list[i]):
-			line_list[i] = 'velocity all create 1.0 {0} dist gaussian\n'.format(seed_num*2)
- 		if ("langevin" in line_list[i]):
- 			line_list[i] = 'fix	2 all langevin 1.0 1.0 1.0 {0}\n'.format(seed_num)			
-	try:
-		os.remove((path+'in.polymer_new_debLen_'+debyeLen))
-	except OSError:
-		pass 			
-	write_file = open((path+'in.polymer_new_debLen_'+debyeLen),'w')
-	for i in range(len(line_list)):
-	     write_file.write(line_list[i])
-	write_file.close()
-	name = 'in.polymer_new_debLen_'+debyeLen
-	return name
-
-
 def writeInDotFiles2(in_list, debyeLen, coul_cut, seed_num, kappa, path):
 	line_list = list(in_list)
 	for i in range(len(line_list)):
@@ -33,6 +12,8 @@ def writeInDotFiles2(in_list, debyeLen, coul_cut, seed_num, kappa, path):
  			line_list[i] = 'read_data	data.polymer_debLen_'+debyeLen+'\n'		
 		if ("dump myDump all atom" in line_list[i]):
 			line_list[i] = 'dump myDump all atom 100 dump_saph_loop_debLen_'+debyeLen+'.lammpstrj\n'
+		if ("log log.saph_loop" in line_list[i]):
+			line_list[i] = 'log log.saph_loop_debLen_'+debyeLen+'\n'
 	try:
 		os.remove((path+'in.polymer_new2_debLen_'+debyeLen))
 	except OSError:
@@ -61,19 +42,11 @@ def jobFileWriting(Lulz,argsListLeng, path):
 
 
 ########################################################################################
-# num_points = int(raw_input("type the num of points make it 10 "))
-saph_loop = raw_input("type the num of saphron loops, 50000 ")
+saph_loop = raw_input("type the num of saphron loops, 10000 ")
 mu = raw_input("type the value of mu, -4.0 ")
 
-path = '/afs/crc.nd.edu/group/whitmer/Data02/Data-Vik/LAPHRON_data_storage/run_shared_eps_1.0/'
+path = '/afs/crc.nd.edu/group/whitmer/Data02/Data-Vik/LAPHRON_data_storage/new_files/'
 
-# debMin = 0.1
-# debMax = 21
-
-sample_file = 'in.polymer_new_template'
-sample_in = open(sample_file,'r')
-sample_lines = sample_in.readlines()
-sample_in.close()
 
 sample2_file = 'in.polymer_new2_template'
 sample2_in = open(sample2_file,'r')
@@ -101,8 +74,7 @@ for x in debyeLen_array:
 	coulCut = "{0:.2f}".format(5*x)
 	kappa = "{0:.2f}".format(float(1)/x)
 	print debVal
-	input_file_list.append(writeInDotFiles(sample_lines, debVal, coulCut, seed_val, kappa, path)+ " "+ saph_loop+ " "+ kappa +" "+ coulCut+ " "+ mu+" "+ debVal)
-	writeInDotFiles2(sample2_lines, debVal, coulCut, seed_val, kappa, path)
+	input_file_list.append(writeInDotFiles2(sample2_lines, debVal, coulCut, seed_val, kappa, path)+ " "+ saph_loop+ " "+ kappa +" "+ mu+" "+ debVal)
 	seed_val+=1
 
 
