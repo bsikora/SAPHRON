@@ -88,18 +88,22 @@ namespace SAPHRON
 			// Perform protonation/deprotonation.
 			auto tc = p->GetCharge();
 			auto amu = _mu;
+			auto randomnumber = _rand.doub();
 
 			//Deprotonate acid if protonated
-			if(tc>=0.0)
+			if(randomnumber > 0.50 && tc>=0.0)
 			{
 				p->SetCharge(-_protoncharge);
 				amu = -_mu;
 			}
+
 			//Protonate if deprotonated
-			else
+			else if(randomnumber <= 0.50 && tc != 0.0)
 			{
 				p->SetCharge(0.0);
 			}
+			else
+				return;
 
 			++_performed;
 
@@ -149,20 +153,23 @@ namespace SAPHRON
 			// Perform protonation/deprotonation.
 			auto tc=p->GetCharge();
 			auto amu = _mu;
+			auto randomnumber = _rand.doub();
 
 			//Deprotonate acid if protonated
-			if(tc>=0.0)
+			if(randomnumber > 0.50 && tc>=0.0)
 			{
 				p->SetCharge(-_protoncharge);
 				amu = -_mu;
 			}
 
 			//Protonate if deprotonated
-			else
+			else if(randomnumber <= 0.50 && tc != 0.0)
 			{
 				p->SetCharge(0.0);
 			}
-
+			else
+				return;
+			
 			++_performed;
 
 			auto ef = ffm->EvaluateEnergy(*p);
