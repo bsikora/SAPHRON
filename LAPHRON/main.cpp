@@ -266,9 +266,11 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
 {
 
   int natoms = static_cast<int> (lmp->atom->natoms);
+  double *vel = new double[3*natoms]; 
   int *image = new int[natoms];
   int *image_all = new int[3*natoms];
   lammps_gather_atoms(lmp, "image", 0, 1, image);
+  lammps_gather_atoms(lmp, "v", 1, 3, vel);
 
   for (int i = 0; i < natoms; i++)
   {
@@ -336,6 +338,30 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
       continue;
     }
 
+    std::string vstr = "Velocities";
+    if (s2.std::string::find(vstr) != std::string::npos)
+    {
+      ofs<<"Velocities"<<std::endl;
+      ofs<<std::endl;
+
+      int ii = 0;
+      while(ii < numlammpsatoms) // this while loop is important
+        // this makes sure that you don't read lines corresponding to previous lammps coordinates
+      {
+        std::getline(infile,line);
+        if(line.empty())
+          continue;
+        ii++;
+      }
+
+      for(int i = 0; i < atoms.size(); i++)
+      {
+        ofs<<i+1<<" "<<vel[i*3]<<" "<<vel[i*3+1]<<" "<<vel[i*3+2];
+        ofs<<std::endl;
+      }
+      continue;
+    }
+    
     std::string s5 = "Bonds";
     if (s2.std::string::find(s5) != std::string::npos)
     {
