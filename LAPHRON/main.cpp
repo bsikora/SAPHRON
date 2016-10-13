@@ -43,7 +43,7 @@ LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
 void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp);
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
 void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& data_file);
-void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file);
+void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
 
 // Main code
 int main(int narg, char **arg)
@@ -70,6 +70,7 @@ int main(int narg, char **arg)
   std::ofstream results_file;
   results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
   results_file<<"f   Rg   Potential_Energy"<<std::endl;
+  results_file.close();
   std::ifstream datatrial("data.trial", std::ios::binary);
   std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
 
@@ -181,15 +182,12 @@ int main(int narg, char **arg)
       data_file.open("data."+lammpsfile, std::ofstream::out);
       WriteDataFile(lmp, Monomers, data_file);
       data_file.close();
-
-      WriteResults(lmp, Monomers, results_file);
+      WriteResults(lmp, Monomers, results_file, debye);
     }
 
     delete lmp;
     delete [] x;
   }
-
-  results_file.close();
 
   // close down MPI
   MPI_Finalize();
@@ -226,6 +224,16 @@ void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp)
     MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
     if (n == 0) break;
     MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
+
+    char *found;
+    found = strstr(line, "langevin");
+
+    if (found!=NULL)
+    {
+      string random = "fix  2 all langevin 1.0 1.0 100.0 "+std::string(time(NULL));
+      strcopy(line,random.c_str());
+    }
+    cout << line <<endl;
     lmp->input->one(line);
   }
 }
@@ -245,8 +253,9 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
   }    
 }
 
-void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file)
+void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye)
 {
+  results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::app);
   int sumCharge = 0;
   for(auto& p : Monomers)
   {
@@ -259,6 +268,7 @@ void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_fi
   double f_value = double(sumCharge)/double(Monomers.size());
 
   results_file<<f_value<<" "<<Rg_value<<" "<<PE_value<<std::endl;
+  results_file.close();
 }
 
 //  WRITE THE LAMMPS DATA FILE
@@ -393,4 +403,5 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
 
     ofs<<iss.str()<<std::endl;
   }
+  ofs.close();
 }
