@@ -6,8 +6,9 @@
 #include "stdio.h"
 #include <math.h> 
 #include "stdlib.h"
-#include "string.h"
+#include <string.h>
 #include <string>
+#include <memory>
 #include "mpi.h"
 #include <omp.h>
 #include <time.h>
@@ -230,7 +231,7 @@ void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp)
 
     if (found!=NULL)
     {
-      string random = "fix  2 all langevin 1.0 1.0 100.0 "+std::string(time(NULL));
+      string random = "fix  2 all langevin 1.0 1.0 100.0 "+std::to_string(time(NULL));
       strcopy(line,random.c_str());
     }
     cout << line <<endl;
