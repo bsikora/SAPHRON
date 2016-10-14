@@ -8,7 +8,6 @@
 #include "stdlib.h"
 #include <string.h>
 #include <string>
-#include <memory>
 #include "mpi.h"
 #include <omp.h>
 #include <time.h>
@@ -41,7 +40,7 @@ using namespace LAMMPS_NS;
 
 // forward declaration
 LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
-void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp);
+void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand);
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
 void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& data_file);
 void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
@@ -88,9 +87,11 @@ int main(int narg, char **arg)
   MPI_Comm comm_lammps;
   MPI_Comm_split(MPI_COMM_WORLD, 1, 0, &comm_lammps);
   
+  srand(time(NULL));
+  int xrand = rand()%99999999+1;   
   LAMMPS *lmp;
   lmp = new LAMMPS(0, NULL, comm_lammps);
-  ReadInputFile(lammpsfile, comm_lammps, lmp);
+  ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
 
   int natoms = static_cast<int> (lmp->atom->natoms);
   double *x = new double[3*natoms];
@@ -162,10 +163,11 @@ int main(int narg, char **arg)
   MPI_Barrier(MPI_COMM_WORLD);
 
   // Run SAPHRON and write out results and new data file for new LAMMPS instance
+  xrand++;
   for(int loop=0; loop<numLoops; loop++)   
   {
     lmp = new LAMMPS(0, NULL, comm_lammps);
-    ReadInputFile(lammpsfile, comm_lammps, lmp);
+    ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
     double *x = new double[3*natoms];
     lammps_gather_atoms(lmp,"x",1,3,x);
 
@@ -185,7 +187,7 @@ int main(int narg, char **arg)
       data_file.close();
       WriteResults(lmp, Monomers, results_file, debye);
     }
-
+    xrand++;
     delete lmp;
     delete [] x;
   }
@@ -194,7 +196,7 @@ int main(int narg, char **arg)
   MPI_Finalize();
 }
 
-void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp)
+void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand)
 {
   // open LAMMPS input script
   FILE *fp;
@@ -231,10 +233,10 @@ void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp)
 
     if (found!=NULL)
     {
-      string random = "fix  2 all langevin 1.0 1.0 100.0 "+std::to_string(time(NULL));
-      strcopy(line,random.c_str());
+      string random = "fix  2 all langevin 1.0 1.0 100.0 "+std::to_string(xrand);
+      strcpy(line,random.c_str());
+      cout <<"MLG PRO 360 YY NO SCOPE !!!!!!! "<<line <<endl;
     }
-    cout << line <<endl;
     lmp->input->one(line);
   }
 }
