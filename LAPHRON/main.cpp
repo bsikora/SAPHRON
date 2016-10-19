@@ -40,6 +40,7 @@ using namespace LAMMPS_NS;
 
 // forward declaration
 LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
+void setSaphronBondedNeighbors(ParticleList &Monomers);
 void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand);
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
 void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& data_file);
@@ -110,14 +111,17 @@ int main(int narg, char **arg)
   for(int i=0; i<Monomers.size(); i++)
     Monomers[i]->SetCharge(q[i]);
 
-  for(int i=1; i < natoms-1; i++)
+  /*for(int i=1; i < natoms-1; i++)
   {
     Monomers[i]->AddBondedNeighbor(Monomers[i+1]);
     Monomers[i]->AddBondedNeighbor(Monomers[i-1]);
   }
-
   Monomers[0]->AddBondedNeighbor(Monomers[1]);
-  Monomers[natoms-1]->AddBondedNeighbor(Monomers[natoms-2]);
+  Monomers[natoms-1]->AddBondedNeighbor(Monomers[natoms-2]);*/
+
+
+  // SET BONDED NEIGHBORS  IN ANOTHER FUNCTION by reading the initial data file
+  setSaphronBondedNeighbors(Monomers);
 
   for(auto& c : Monomers)
     poly.AddChild(c);
@@ -407,4 +411,54 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
     ofs<<iss.str()<<std::endl;
   }
   ofs.close();
+}
+
+void setSaphronBondedNeighbors(ParticleList &Monomers)
+{
+  int var0 = 0;
+  int var1 = 0;
+  int var2 = 0;
+  int var3 = 0;
+
+  cout <<"I am here TOO"<<endl;
+  std::ifstream infile("data.trial");
+  std::string line;
+
+  int ii = 0;
+  int store = 0;
+
+  while (std::getline(infile, line))
+  {
+    if(line.empty())
+      continue;
+
+    std::istringstream iss(line);
+    std::string s2 = iss.str();
+
+    std::string s5 = "Bonds";
+    if (s2.std::string::find(s5) != std::string::npos)
+    {
+      store = ii;
+      break;
+    }
+    ii++;
+  }
+
+
+  while (std::getline(infile, line))
+  {
+    if(line.empty())
+      continue;
+
+    std::istringstream iss(line);
+
+    if (ii>=store)
+    {
+    iss >> var0 >> var1 >> var2 >> var3;
+    cout << var0 << var1 << var2 << var3 << "\n";
+    cout <<"The line got is "<<line <<endl;
+    Monomers[var2-1]->AddBondedNeighbor(Monomers[var3-1]);
+    }
+  }
+
 }
