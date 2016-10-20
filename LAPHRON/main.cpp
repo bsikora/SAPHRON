@@ -444,7 +444,6 @@ void setSaphronBondedNeighbors(ParticleList &Monomers)
     ii++;
   }
 
-  int do_not_detect_2 = 0;
   while (std::getline(infile, line))
   {
     if(line.empty())
@@ -457,22 +456,8 @@ void setSaphronBondedNeighbors(ParticleList &Monomers)
       iss >> var0 >> var1 >> var2 >> var3;
       cout << var0 << var1 << var2 << var3 << "\n";
       cout <<"The line got is "<<line <<endl;
-
-      if (var2 == 1)
-      {
-        Monomers[var2-1]->AddBondedNeighbor(Monomers[var3-1]);
-        Monomers[var3-1]->AddBondedNeighbor(Monomers[var2-1]);
-        Monomers[var3-1]->AddBondedNeighbor(Monomers[(var3+1)-1]);
-        do_not_detect_2 = var3+1;
-
-      }
-
-      if (var2 != 1 && var3!=do_not_detect_2)
-      {
-        Monomers[var2-1]->AddBondedNeighbor(Monomers[var3-1]);
-        Monomers[var2-1]->AddBondedNeighbor(Monomers[(var3-2)-1]);
-      }
-
+      Monomers[var2-1]->AddBondedNeighbor(Monomers[var3-1]);
+      Monomers[var3-1]->AddBondedNeighbor(Monomers[var2-1]);
     }
   }
 
