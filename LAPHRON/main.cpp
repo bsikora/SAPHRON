@@ -45,6 +45,7 @@ void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, i
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
 void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& data_file);
 void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
+void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop);
 
 // Main code
 int main(int narg, char **arg)
@@ -68,6 +69,10 @@ int main(int narg, char **arg)
   double mu = atof(arg[5]);
   double debye = atof(arg[6]);
 
+  std::ofstream dump_file;
+  dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::out);
+  dump_file<<"id   type   q   x   y   z   ix   iy   iz"<<std::endl;
+  dump_file.close();
   std::ofstream results_file;
   results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
   results_file<<"f   Rg   Potential_Energy"<<std::endl;
@@ -123,6 +128,15 @@ int main(int narg, char **arg)
   // SET BONDED NEIGHBORS  IN ANOTHER FUNCTION by reading the initial data file
   setSaphronBondedNeighbors(Monomers);
 
+  // JUST A CHECK IF THE BONDS ARE CORRECTLY SET IN THE SAPHRON
+  for(auto& c : Monomers)
+  {
+    cout << "species ID" << c->GetGlobalIdentifier() << " bonded to: ";
+    for(auto& b : c->GetBondedNeighbors())
+      cout<<b->GetGlobalIdentifier()<<" ";
+      cout<<endl;  
+  }
+
   for(auto& c : Monomers)
     poly.AddChild(c);
 
@@ -168,6 +182,7 @@ int main(int narg, char **arg)
 
   // Run SAPHRON and write out results and new data file for new LAMMPS instance
   xrand++;
+  int hit_detection_numb = 0;
   for(int loop=0; loop<numLoops; loop++)   
   {
     lmp = new LAMMPS(0, NULL, comm_lammps);
@@ -190,8 +205,15 @@ int main(int narg, char **arg)
       WriteDataFile(lmp, Monomers, data_file);
       data_file.close();
       WriteResults(lmp, Monomers, results_file, debye);
+      if (hit_detection_numb == 9)
+      {
+      	WriteDump(lmp, Monomers, dump_file, debye, loop);
+      	hit_detection_numb = -1;
+      }
+      
     }
     xrand++;
+    hit_detection_numb++;
     delete lmp;
     delete [] x;
   }
@@ -461,4 +483,35 @@ void setSaphronBondedNeighbors(ParticleList &Monomers)
     }
   }
 
+}
+
+
+void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop)
+{
+  int natoms = static_cast<int> (lmp->atom->natoms);
+  int *image = new int[natoms];
+  int *image_all = new int[3*natoms];
+  lammps_gather_atoms(lmp, "image", 0, 1, image);
+
+  for (int i = 0; i < natoms; i++)
+  {
+    image_all[i*3] = (image[i] & IMGMASK) - IMGMAX;;
+    image_all[i*3+1] = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
+    image_all[i*3+2] = (image[i] >> IMG2BITS) - IMGMAX;
+  }
+
+  int MDstep = loop*1000;
+  dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::app);
+  dump_file<<"The MD step is: "<<MDstep<<std::endl;
+  for(int i = 0; i < Monomers.size(); i++)
+  {
+    dump_file<<i+1<<" "<<Monomers[i]->GetSpeciesID()<<" "<<Monomers[i]->GetCharge()<<" ";
+    auto& xyz = Monomers[i]->GetPosition();
+    for(auto& x : xyz){
+        dump_file<<x<<" ";
+    }
+    dump_file<<image_all[i*3]<<" "<<image_all[i*3+1]<<" "<<image_all[i*3+2];
+    dump_file<<std::endl;
+  }
+  dump_file.close();
 }
