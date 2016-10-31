@@ -109,9 +109,9 @@ int main(int narg, char **arg)
   SAPHRON::Particle poly("Polymer");
   SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
   SAPHRON::Particle* chloride = new Particle({100.0,0.0,0.0},{0.0,0.0,0.0}, "Chloride");
-  SAPHRON::Particle* chloride2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Chloride");
-  SAPHRON::Particle* proton = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Proton");
-  SAPHRON::Particle* proton2 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Proton");
+  SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
+  SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
+  SAPHRON::Particle* Hydroxide2 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
   // Intialize monomers 
   for(int i=0; i<natoms*3 - 3; i=i+3)
     Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
@@ -130,10 +130,10 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
     poly.AddChild(c);
   
   sodium->SetCharge(1.0);
-  proton->SetCharge(1.0);
-  proton2->SetCharge(1.0);
+  sodium2->SetCharge(1.0);
+  Hydroxide->SetCharge(-1.0);
+  Hydroxide2->SetCharge(-1.0);
   chloride->SetCharge(-1.0);
-  chloride2->SetCharge(-1.0);
 
   //Create world
   WorldManager WM;
@@ -143,12 +143,12 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   WM.AddWorld(&world);
   world.AddParticle(&poly);
   world.AddParticle(sodium);
-  world.AddParticle(proton);
-  world.AddParticle(proton2);
+  world.AddParticle(Hydroxide);
+  world.AddParticle(Hydroxide2);
   world.AddParticle(chloride);
-  world.AddParticle(chloride2);
+  world.AddParticle(sodium2);
   world.SetChemicalPotential("Sodium", -14.1765);
-  world.SetChemicalPotential("Proton", -11.2338);
+  world.SetChemicalPotential("Hydroxide", -11.2338);
   world.SetChemicalPotential("Chloride", -14.1765);
 
   //Create forcefields
@@ -161,15 +161,15 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
   ffm.AddNonBondedForceField("Monomer", "dMonomer", lj);
   ffm.AddNonBondedForceField("Monomer", "Chloride", lj2);
-  ffm.AddNonBondedForceField("Monomer", "Proton", lj2);
+  ffm.AddNonBondedForceField("Monomer", "Hydroxide", lj2);
   ffm.AddNonBondedForceField("Monomer", "Sodium", lj2);
   ffm.AddNonBondedForceField("dMonomer", "dMonomer", lj);
   ffm.AddNonBondedForceField("dMonomer", "Chloride", lj2);
-  ffm.AddNonBondedForceField("dMonomer", "Proton", lj2);
+  ffm.AddNonBondedForceField("dMonomer", "Hydroxide", lj2);
   ffm.AddNonBondedForceField("dMonomer", "Sodium", lj2);
-  ffm.AddNonBondedForceField("Proton", "Chloride", lj2);
-  ffm.AddNonBondedForceField("Proton", "Proton", lj2);
-  ffm.AddNonBondedForceField("Proton", "Sodium", lj2);
+  ffm.AddNonBondedForceField("Hydroxide", "Chloride", lj2);
+  ffm.AddNonBondedForceField("Hydroxide", "Hydroxide", lj2);
+  ffm.AddNonBondedForceField("Hydroxide", "Sodium", lj2);
   ffm.AddNonBondedForceField("Chloride", "Chloride", lj2);
   ffm.AddNonBondedForceField("Chloride", "Sodium", lj2);
   ffm.AddNonBondedForceField("Sodium", "Sodium", lj2);
@@ -178,10 +178,10 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   MoveManager MM (seed);
   AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
   InsertParticleMove Ins1({{"Sodium"},{"Chloride"}}, WM, 20, true,seed + 3);
-  InsertParticleMove Ins2({{"Proton"},{"Chloride"}}, WM, 20, true,seed + 30);
+  InsertParticleMove Ins2({{"Hydroxide"},{"Sodium"}}, WM, 20, true,seed + 30);
   DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
-  DeleteParticleMove Del2({{"Proton"}, {"Chloride"}}, true, seed + 40);
-  AcidReactionMove AcidMv({{"Monomer"},{"dMonomer"}}, {{"Proton"}}, WM, 20, mu, seed + 5);
+  DeleteParticleMove Del2({{"Hydroxide"}, {"Sodium"}}, true, seed + 40);
+  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -mu, seed + 5);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 
   MM.AddMove(&AnnMv);
