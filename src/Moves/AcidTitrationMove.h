@@ -91,11 +91,12 @@ namespace SAPHRON
 			auto randomnumber = _rand.doub();
 
 			//Deprotonate acid if protonated
-			if(randomnumber > 0.50 && tc>=0.0)
+			if(randomnumber > 0.50 && tc==0.0)
 			{
 				p->SetCharge(-_protoncharge);
 				amu = -_mu;
 			}
+
 
 			//Protonate if deprotonated
 			else if(randomnumber <= 0.50 && tc != 0.0)
@@ -156,7 +157,7 @@ namespace SAPHRON
 			auto randomnumber = _rand.doub();
 
 			//Deprotonate acid if protonated
-			if(randomnumber > 0.50 && tc>=0.0)
+			if(randomnumber > 0.50 && tc==0.0)
 			{
 				p->SetCharge(-_protoncharge);
 				amu = -_mu;
