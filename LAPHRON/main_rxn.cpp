@@ -181,7 +181,7 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   InsertParticleMove Ins2({{"Proton"},{"Chloride"}}, WM, 20, true,seed + 30);
   DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
   DeleteParticleMove Del2({{"Proton"}, {"Chloride"}}, true, seed + 40);
-  AcidReactionMove AcidMv({{"Monomer"},{"dMonomer"}}, {{"Proton"}}, WM, 20, 10, seed + 5);
+  AcidReactionMove AcidMv({{"Monomer"},{"dMonomer"}}, {{"Proton"}}, WM, 20, mu, seed + 5);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 
   MM.AddMove(&AnnMv);
@@ -189,7 +189,7 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   MM.AddMove(&Ins2);
   MM.AddMove(&Del1);
   MM.AddMove(&Del2);
-  //MM.AddMove(&AcidMv);
+  MM.AddMove(&AcidMv);
   //MM.AddMove(&AcidTitMv);
 
   int ta = 0;
@@ -235,9 +235,6 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
     double *x = new double[3*natoms];
     lammps_gather_atoms(lmp,"x",1,3,x);
 
-    std::cout<<"num lammps atoms "<<natoms<<std::endl;
-    std::cout<<"num SAPHRON atoms "<< world.GetParticleCount()<<std::endl;
-
     // Set position of monomers
     int i = 0;
     for(const auto& p : world)
@@ -277,8 +274,6 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
     hit_detection_numb++;
     delete lmp;
     delete [] x;
-    std::cout<<"num lammps atoms "<<natoms<<std::endl;
-    std::cout<<"num SAPHRON atoms "<< world.GetParticleCount()<<std::endl;
   }
 
   // close down MPI

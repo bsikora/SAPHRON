@@ -143,7 +143,6 @@ namespace SAPHRON
 			// Generate a random position and orientation for particle insertion.
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 			{
-
 				const auto& H = w->GetHMatrix();
 				Vector3D pr{_rand.doub(), _rand.doub(), _rand.doub()};
 				Vector3D pos = H*pr;

@@ -25,7 +25,7 @@ namespace SAPHRON
 		int _rejected;
 		bool _prefac;
 		int _scount;
-		double _pKo;
+		double _mu;
 
 		double _m1;
 		double _m2;
@@ -66,10 +66,10 @@ namespace SAPHRON
 		AcidReactionMove(const std::vector<std::string>& swap,
 		const std::vector<std::string>& products,
 		const WorldManager& wm,
-		int stashcount, double pKo,unsigned seed = 7456253) : 
+		int stashcount, double mu,unsigned seed = 7456253) : 
 		_swap(0),_products(0), _rand(seed), _performed(0),
 		 _rejected(0), _prefac(true), _scount(stashcount),
-		 _pKo(pKo), _m1(0), _m2(0), _i1(0), _i2(1), _c1(0),
+		 _mu(mu), _m1(0), _m2(0), _i1(0), _i2(1), _c1(0),
 		 _c2(0), _seed(seed)
 		{
 			// Verify species list and add to local vector.
@@ -134,10 +134,10 @@ namespace SAPHRON
 		AcidReactionMove(const std::vector<int>& swap,
 		const std::vector<int>& products,
 		const WorldManager& wm,
-		int stashcount, double pKo,unsigned seed = 7456253) : 
+		int stashcount, double mu, unsigned seed = 7456253) : 
 		_swap(0),_products(0), _rand(seed), _performed(0),
 		 _rejected(0), _prefac(true), _scount(stashcount),
-		 _pKo(pKo), _m1(0), _m2(0), _i1(0), _i2(1), _c1(0),
+		 _mu(mu), _m1(0), _m2(0), _i1(0), _i2(1), _c1(0),
 		 _c2(0), _seed(seed)
 		{
 			// Verify species list and add to local vector.
@@ -255,7 +255,7 @@ namespace SAPHRON
 			if(RxnExtent == -1)
 			{
 				Nratio = comp2*compph/(comp1 + 1.0);
-				Korxn = exp(_pKo);
+				Korxn = exp(_mu);
 				ei = ffm->EvaluateEnergy(*ph);
 				w->RemoveParticle(ph);
 				ei += ffm->EvaluateEnergy(*p2);
@@ -270,7 +270,7 @@ namespace SAPHRON
 			else
 			{
 				Nratio = comp1/((comp2+1.0)*(compph+1.0));
-				Korxn = exp(-_pKo);
+				Korxn = exp(-_mu);
 
 				ei = ffm->EvaluateEnergy(*p1);
 				
@@ -369,7 +369,7 @@ namespace SAPHRON
 		{
 			json["type"] = GetName();
 			json["seed"] = _seed;
-			json["pKo"] = _pKo;
+			json["mu"] = _mu;
 			json["stash_count"] = _scount;
 			json["op_prefactor"] = _prefac;
 

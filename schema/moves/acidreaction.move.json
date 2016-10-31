@@ -35,7 +35,7 @@
 			"type" : "integer",
 			"minimum" : 1
 		},
-		"pKo" : {
+		"mu" : {
 			"type" : "number"
 		},
 		"stash_count" : {
@@ -46,6 +46,6 @@
 			"type" : "boolean"
 		}
 	},
-	"required": ["type", "products", "swap","pKo", "stash_count"],
+	"required": ["type", "products", "swap", "mu", "stash_count"],
 	"additionalProperties": false
 }
