@@ -69,6 +69,14 @@ int main(int narg, char **arg)
   double mu = atof(arg[5]);
   double debye = atof(arg[6]);
   double box = atof(arg[7]);
+  double muNa = atof(arg[8]);
+  double muOH = atof(arg[9]);
+  double muCl = atof(arg[10]);
+  // taking into account minimum image convention
+  if (coulcut > (box/2))
+  {
+    coulcut = box/2;
+  }
 
   std::ofstream dump_file;
   dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::out);
@@ -121,7 +129,7 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   for(int i=0; i<Monomers.size()-1; i++)
     Monomers[i]->SetCharge(0.0);
 
-  Monomers[Monomers.size() - 1]->SetCharge(-1.0);
+  Monomers[Monomers.size() - 1]->SetCharge(-1.67);
 
   // SET BONDED NEIGHBORS  IN ANOTHER FUNCTION by reading the initial data file
   setSaphronBondedNeighbors(Monomers);
@@ -129,11 +137,11 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   for(auto& c : Monomers)
     poly.AddChild(c);
   
-  sodium->SetCharge(1.0);
-  sodium2->SetCharge(1.0);
-  Hydroxide->SetCharge(-1.0);
-  Hydroxide2->SetCharge(-1.0);
-  chloride->SetCharge(-1.0);
+  sodium->SetCharge(1.67);
+  sodium2->SetCharge(1.67);
+  Hydroxide->SetCharge(-1.67);
+  Hydroxide2->SetCharge(-1.67);
+  chloride->SetCharge(-1.67);
 
   //Create world
   WorldManager WM;
@@ -147,9 +155,9 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   world.AddParticle(Hydroxide2);
   world.AddParticle(chloride);
   world.AddParticle(sodium2);
-  world.SetChemicalPotential("Sodium", -14.1765);
-  world.SetChemicalPotential("Hydroxide", -11.2338);
-  world.SetChemicalPotential("Chloride", -14.1765);
+  world.SetChemicalPotential("Sodium", muNa);
+  world.SetChemicalPotential("Hydroxide", muOH);
+  world.SetChemicalPotential("Chloride", muCl); // changed here
 
   //Create forcefields
   ForceFieldManager ffm;
@@ -181,7 +189,7 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   InsertParticleMove Ins2({{"Hydroxide"},{"Sodium"}}, WM, 20, true,seed + 30);
   DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
   DeleteParticleMove Del2({{"Hydroxide"}, {"Sodium"}}, true, seed + 40);
-  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -mu, seed + 5);
+  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu-muOH), seed + 5);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 
   MM.AddMove(&AnnMv);
