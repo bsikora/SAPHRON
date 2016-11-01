@@ -113,23 +113,23 @@ int main(int narg, char **arg)
   lammps_gather_atoms(lmp, "x", 1, 3, x);
 
   /////////////////SETUP SAPHRON//////////////////////////////////////////////////////////////////////
-  ParticleList Monomers;
+  ParticleList Monomers;   // list of pointers
   SAPHRON::Particle poly("Polymer");
-  SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
+  SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium"); // set pointers
   SAPHRON::Particle* chloride = new Particle({100.0,0.0,0.0},{0.0,0.0,0.0}, "Chloride");
   SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
   SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
   SAPHRON::Particle* Hydroxide2 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
-  // Intialize monomers 
+  // Intialize monomers leaving the last monomer
   for(int i=0; i<natoms*3 - 3; i=i+3)
     Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
 
-Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]},{0.0,0.0,0.0}, "dMonomer"));
+Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]},{0.0,0.0,0.0}, "dMonomer")); // setting the last monomer
   // Set charges on the monomers
   for(int i=0; i<Monomers.size()-1; i++)
     Monomers[i]->SetCharge(0.0);
 
-  Monomers[Monomers.size() - 1]->SetCharge(-1.67);
+  Monomers[Monomers.size() - 1]->SetCharge(-1.67); // last monomer charged
 
   // SET BONDED NEIGHBORS  IN ANOTHER FUNCTION by reading the initial data file
   setSaphronBondedNeighbors(Monomers);
@@ -137,7 +137,7 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   for(auto& c : Monomers)
     poly.AddChild(c);
   
-  sodium->SetCharge(1.67);
+  sodium->SetCharge(1.67); // dereference the pointer and set the charge
   sodium2->SetCharge(1.67);
   Hydroxide->SetCharge(-1.67);
   Hydroxide2->SetCharge(-1.67);
@@ -189,7 +189,7 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
   InsertParticleMove Ins2({{"Hydroxide"},{"Sodium"}}, WM, 20, true,seed + 30);
   DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
   DeleteParticleMove Del2({{"Hydroxide"}, {"Sodium"}}, true, seed + 40);
-  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu-muOH), seed + 5);
+  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 
   MM.AddMove(&AnnMv);
