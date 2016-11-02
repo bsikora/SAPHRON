@@ -24,6 +24,7 @@
 #include "../src/Moves/AcidReactionMove.h"
 #include "../src/Moves/AcidTitrationMove.h"
 #include "../src/Moves/AnnealChargeMove.h"
+#include "../src/Moves/SpeciesSwapMove.h"
 #include "../src/Particles/Particle.h"
 #include "../src/Worlds/World.h"
 #include "../src/Worlds/WorldManager.h"
@@ -69,9 +70,13 @@ int main(int narg, char **arg)
   double mu = atof(arg[5]);
   double debye = atof(arg[6]);
   double box = atof(arg[7]);
-  double muNa = atof(arg[8]);
-  double muOH = atof(arg[9]);
-  double muCl = atof(arg[10]);
+  int numNa = atof(arg[8]);
+  int numOH = atof(arg[9]);
+  int numCl = atof(arg[10]);
+
+  double muNa = -log(box*box*box/numNa);
+  double muOH = -log(box*box*box/numOH);
+  double muCl = -log(box*box*box/numCl);
   // taking into account minimum image convention
   if (coulcut > (box/2))
   {
@@ -107,54 +112,98 @@ int main(int narg, char **arg)
   LAMMPS *lmp;
   lmp = new LAMMPS(0, NULL, comm_lammps);
   ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
+  
+  string random;
+  char line[1024];
+
+  random = "create_atoms 3 random " + std::to_string(numNa) + " 45438 NULL";
+  std::cout<<"CREATED: "<<random<<std::endl;
+  strcpy(line,random.c_str());
+  lmp->input->one(line);
+
+  random = "create_atoms 4 random " + std::to_string(numCl) + " 354324 NULL";
+  strcpy(line,random.c_str());
+  lmp->input->one(line);
+
+  random = "create_atoms 5 random " + std::to_string(numOH) + " 4538 NULL";
+  strcpy(line,random.c_str());
+  lmp->input->one(line);
+
+  lmp->input->one("minimize 1.0e-4 1.0e-6 100 1000");
 
   int natoms = static_cast<int> (lmp->atom->natoms);
   double *x = new double[3*natoms];
+  int *type = new int[natoms];
   lammps_gather_atoms(lmp, "x", 1, 3, x);
+  lammps_gather_atoms(lmp,"type", 0, 1, type);
 
   /////////////////SETUP SAPHRON//////////////////////////////////////////////////////////////////////
+  World world(box, box, box, coulcut, seed + 1); // same as lammps input data file
+  world.SetTemperature(1.0);
+
   ParticleList Monomers;   // list of pointers
   SAPHRON::Particle poly("Polymer");
   SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium"); // set pointers
   SAPHRON::Particle* chloride = new Particle({100.0,0.0,0.0},{0.0,0.0,0.0}, "Chloride");
   SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
   SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
-  SAPHRON::Particle* Hydroxide2 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
-  // Intialize monomers leaving the last monomer
-  for(int i=0; i<natoms*3 - 3; i=i+3)
-    Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
+  SAPHRON::Particle* sodium3 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
 
-Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]},{0.0,0.0,0.0}, "dMonomer")); // setting the last monomer
+  sodium->SetCharge(1.67); // dereference the pointer and set the charge
+  sodium2->SetCharge(1.67);
+  sodium3->SetCharge(1.67);
+  Hydroxide->SetCharge(-1.67);
+  chloride->SetCharge(-1.67);
+
+  for(int i=0; i<natoms*3; i=i+3)
+  {
+    if(type[i/3] == 1 || type[i/3] == 2)
+    {
+      Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
+    }
+  }
+
   // Set charges on the monomers
-  for(int i=0; i<Monomers.size()-1; i++)
-    Monomers[i]->SetCharge(0.0);
+  for(auto& m : Monomers)
+    m->SetCharge(0.0);
 
-  Monomers[Monomers.size() - 1]->SetCharge(-1.67); // last monomer charged
+  Monomers[0]->SetSpecies("dMonomer"); // first monomer is deprotonated 
+  Monomers[0]->SetCharge(-1.67); // first monomer charged
 
   // SET BONDED NEIGHBORS  IN ANOTHER FUNCTION by reading the initial data file
   setSaphronBondedNeighbors(Monomers);
 
   for(auto& c : Monomers)
     poly.AddChild(c);
+
+  world.AddParticle(&poly);
   
-  sodium->SetCharge(1.67); // dereference the pointer and set the charge
-  sodium2->SetCharge(1.67);
-  Hydroxide->SetCharge(-1.67);
-  Hydroxide2->SetCharge(-1.67);
-  chloride->SetCharge(-1.67);
+  for(int i=0; i<natoms*3; i=i+3)
+  {
+    if(type[i/3] == 3)
+    {
+      Particle* pnew = sodium->Clone();
+      pnew->SetPosition({x[i],x[i+1],x[i+2]});
+      world.AddParticle(pnew);
+    }
+    else if(type[i/3] == 4)
+    {
+      Particle* pnew = chloride->Clone();
+      pnew->SetPosition({x[i],x[i+1],x[i+2]});
+      world.AddParticle(pnew);
+    }
+    else if(type[i/3] == 5)
+    {
+      Particle* pnew = Hydroxide->Clone();
+      pnew->SetPosition({x[i],x[i+1],x[i+2]});
+      world.AddParticle(pnew);
+    }
+  }
 
   //Create world
   WorldManager WM;
-  double rcut = coulcut;
-  World world(box, box, box, rcut, seed + 1); // same as lammps input data file
-  world.SetTemperature(1.0);
   WM.AddWorld(&world);
-  world.AddParticle(&poly);
   world.AddParticle(sodium);
-  world.AddParticle(Hydroxide);
-  world.AddParticle(Hydroxide2);
-  world.AddParticle(chloride);
-  world.AddParticle(sodium2);
   world.SetChemicalPotential("Sodium", muNa);
   world.SetChemicalPotential("Hydroxide", muOH);
   world.SetChemicalPotential("Chloride", muCl); // changed here
@@ -184,12 +233,13 @@ Monomers.push_back(new Particle({x[natoms*3 - 3],x[natoms*3 - 2],x[natoms*3 - 1]
 
   //Set up moves
   MoveManager MM (seed);
-  AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
+  //AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
   InsertParticleMove Ins1({{"Sodium"},{"Chloride"}}, WM, 20, true,seed + 3);
   InsertParticleMove Ins2({{"Hydroxide"},{"Sodium"}}, WM, 20, true,seed + 30);
   DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
   DeleteParticleMove Del2({{"Hydroxide"}, {"Sodium"}}, true, seed + 40);
   AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
+  SpeciesSwapMove AnnMv({{"dMonomer"},{"Monomer"}},true, seed+6);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 
   MM.AddMove(&AnnMv);
@@ -341,7 +391,7 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
   world.UpdateNeighborList();
 
   // Perform moves for M steps ()
-  for(int i=0; i<10; i++)
+  for(int i=0; i<18; i++)
   {
     auto* move = MM.SelectRandomMove();
     move->Perform(&WM, &ffm, MoveOverride::None);
@@ -379,8 +429,10 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
   double *vel = new double[3*natoms]; 
   int *image = new int[natoms];
   int *image_all = new int[3*natoms];
+  int *type = new int[natoms];
   lammps_gather_atoms(lmp, "image", 0, 1, image);
   lammps_gather_atoms(lmp, "v", 1, 3, vel);
+  lammps_gather_atoms(lmp,"type", 0, 1, type);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
@@ -525,6 +577,11 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
     }
     ofs.close();
   }
+
+  delete [] image;
+  delete [] image_all;
+  delete [] vel;
+  delete [] type;
 }
 
 void setSaphronBondedNeighbors(ParticleList &Monomers)
@@ -577,7 +634,6 @@ void setSaphronBondedNeighbors(ParticleList &Monomers)
 
 }
 
-
 void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop)
 {
   int natoms = static_cast<int> (lmp->atom->natoms);
@@ -606,4 +662,7 @@ void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, do
     dump_file<<std::endl;
   }
   dump_file.close();
+
+  delete [] image;
+  delete [] image_all; 
 }
