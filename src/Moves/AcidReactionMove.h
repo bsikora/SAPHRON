@@ -209,6 +209,8 @@ namespace SAPHRON
 
 			int RxnExtent = 1;
 			double rxndirection = _rand.doub();
+			double bias = 1.0;
+			auto& comp = w->GetComposition();
 
 			//Determine reaction direction.
 			if(rxndirection>=0.5) //Forward reaction
@@ -218,6 +220,8 @@ namespace SAPHRON
 
 				if(p1==nullptr)
 					return;
+
+				bias = double(comp[_swap[0]])/(comp[_swap[0]]+comp[_swap[1]]);
 			}
 
 			else //Reverse reaction
@@ -234,11 +238,12 @@ namespace SAPHRON
 					std::cout<<"Only Half of the products present! Exiting"<<std::endl;
 					exit(-1);
 				}
+
+				bias = double(comp[_swap[1]])/(comp[_swap[0]]+comp[_swap[1]]);
 			}
 
 			double lambdaratio;
 
-			auto& comp = w->GetComposition();
 			int comp1 = comp[_i1];
 			int comp2 = comp[_i2];
 			int compph = comp[_products[0]];
@@ -301,7 +306,7 @@ namespace SAPHRON
 			auto& sim = SimInfo::Instance();
 
 			// Acceptance probability.
-			double pacc = Nratio*V*lambda3*lambdaratio*Korxn*
+			double pacc = Nratio*V*lambda3*lambdaratio*Korxn*bias*
 			exp((-de.energy.total())/(w->GetTemperature()*sim.GetkB()));
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
