@@ -454,7 +454,7 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
 
     //Read in file and change what is needed
     // THIS TIME READING IS NOT DATA.TRIAL BUT SOME OTHER FILE that will be template
-    std::ifstream infile("data.trial");
+    std::ifstream infile("data.template");
     std::string line;
     while (std::getline(infile, line))
     {
