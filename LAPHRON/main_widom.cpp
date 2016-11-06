@@ -91,10 +91,10 @@ int main(int narg, char **arg)
   results_file.open("excess_chemical_pot" + std::to_string(debye)+"_results.dat", std::ofstream::out);
   results_file<<"Na   OH   Cl"<<std::endl;
   results_file.close();
-  std::ifstream datatrial("data.trial", std::ios::binary);
-  std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
+  //std::ifstream datatrial("data.trial", std::ios::binary);
+  //std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
 
-  dtfile << datatrial.rdbuf();
+  //dtfile << datatrial.rdbuf();
 
   int seed = time(NULL); //seed used for this simulation
 
