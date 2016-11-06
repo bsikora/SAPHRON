@@ -111,11 +111,13 @@ int main(int narg, char **arg)
   int xrand = rand()%99999999+1;   
   LAMMPS *lmp;
   lmp = new LAMMPS(0, NULL, comm_lammps);
-  ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
+  std::string ions_input_file = "in.just_OH_and_salt";
+  ReadInputFile(ions_input_file, comm_lammps, lmp, xrand);
   
   string random;
   char line[1024];
 
+/*
   random = "create_atoms 3 random " + std::to_string(numNa) + " 45438 NULL";
   std::cout<<"CREATED: "<<random<<std::endl;
   strcpy(line,random.c_str());
@@ -139,13 +141,17 @@ int main(int narg, char **arg)
   lmp->input->one(line);
 
   lmp->input->one("minimize 1.0e-4 1.0e-6 100 1000");
+  */
+
 // ##################
 
+  cout << "I am here"<< endl;
   int natoms = static_cast<int> (lmp->atom->natoms);
   double *x = new double[3*natoms];
   int *type = new int[natoms];
   lammps_gather_atoms(lmp, "x", 1, 3, x);
   lammps_gather_atoms(lmp,"type", 0, 1, type);
+  cout << "I am here too"<<endl;
 
   /////////////////SETUP SAPHRON//////////////////////////////////////////////////////////////////////
   World world(box, box, box, coulcut, seed + 1); // same as lammps input data file
@@ -196,13 +202,13 @@ int main(int narg, char **arg)
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
-    else if(type[i/3] == 4)
+    else if(type[i/3] == 2)
     {
       Particle* pnew = chloride->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
-    else if(type[i/3] == 5)
+    else if(type[i/3] == 1)
     {
       Particle* pnew = Hydroxide->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
@@ -216,7 +222,6 @@ int main(int narg, char **arg)
   muCl = 0.0;
   WorldManager WM;
   WM.AddWorld(&world);
-  world.AddParticle(sodium); // ???????????????????????????????
   world.SetChemicalPotential("Sodium", muNa);
   world.SetChemicalPotential("Hydroxide", muOH);
   world.SetChemicalPotential("Chloride", muCl); // changed here
@@ -297,13 +302,14 @@ int main(int narg, char **arg)
   int hit_detection_numb = 0;
   for(int loop=0; loop<numLoops; loop++)   
   {
+  	cout<<"yolo Swag"<<endl;
     lmp = new LAMMPS(0, NULL, comm_lammps);
     cout<<"Read input"<<endl;
     ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
     natoms = static_cast<int> (lmp->atom->natoms);
     double *x = new double[3*natoms];
     lammps_gather_atoms(lmp,"x",1,3,x);
-
+    cout<<"yolo swag 360 scoper"<<endl;
     // Set position of monomers
     int i = 0;
     for(const auto& p : world)
@@ -506,7 +512,7 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
           }
           else
           {
-            ofs<<i+1<<" 1 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
+            ofs<<i+1<<" 1 "<<(p->GetSpeciesID()+1)<<" "<<p->GetCharge()<<" ";
             for(auto& x : p->GetPosition()){
                 ofs<<x<<" ";
             }
