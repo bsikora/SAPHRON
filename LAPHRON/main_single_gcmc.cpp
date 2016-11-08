@@ -74,6 +74,8 @@ int main(int narg, char **arg)
   int numOH = atof(arg[9]);
   int numCl = atof(arg[10]);
 
+  numNa = numNa + numOH + numCl;
+  
   double muNa = -log(box*box*box/numNa);
   double muOH = -log(box*box*box/numOH);
   double muCl = -log(box*box*box/numCl);

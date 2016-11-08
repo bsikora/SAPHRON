@@ -46,7 +46,7 @@ void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, i
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
 void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file, double box, int totalatoms);
 void WriteResults(World &world, std::ofstream& results_file, double &debye);
-void WriteDump(LAMMPS* lmp, World &world, std::ofstream& dump_file, double &debye, int &loop);
+void WriteDump(LAMMPS* lmp, World &world, std::ofstream& dump_file, double &debye, int &loop);//kjnfvkdfkjdfvkjdfkj
 
 // Main code
 int main(int narg, char **arg)
@@ -88,7 +88,7 @@ int main(int narg, char **arg)
   dump_file<<"id   type   q   x   y   z   ix   iy   iz"<<std::endl;
   dump_file.close();
   std::ofstream results_file;
-  results_file.open("excess_chemical_pot" + std::to_string(debye)+"_results.dat", std::ofstream::out);
+  results_file.open("excess_chemical_pot_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
   results_file<<"Na   OH   Cl"<<std::endl;
   results_file.close();
   //std::ifstream datatrial("data.trial", std::ios::binary);
@@ -111,7 +111,7 @@ int main(int narg, char **arg)
   int xrand = rand()%99999999+1;   
   LAMMPS *lmp;
   lmp = new LAMMPS(0, NULL, comm_lammps);
-  std::string ions_input_file = "in.just_OH_and_salt";
+  std::string ions_input_file = "in.just_OH_and_salt_"+std::string(arg[6]);
   ReadInputFile(ions_input_file, comm_lammps, lmp, xrand);
   
   string random;
@@ -417,7 +417,7 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
 
 void WriteResults(World &world, std::ofstream& results_file, double &debye)
 {
-  results_file.open("excess_chemical_pot" + std::to_string(debye)+"_results.dat", std::ofstream::app);
+  results_file.open("excess_chemical_pot_" + std::to_string(debye)+"_results.dat", std::ofstream::app);
   const double mu_ex_Na = world.GetChemicalPotential("Sodium");
   const double mu_ex_OH = world.GetChemicalPotential("Hydroxide");
   const double mu_ex_Cl = world.GetChemicalPotential("Chloride");

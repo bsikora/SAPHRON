@@ -203,7 +203,6 @@ int main(int narg, char **arg)
   //Create world
   WorldManager WM;
   WM.AddWorld(&world);
-  world.AddParticle(sodium);
   world.SetChemicalPotential("Sodium", muNa);
   world.SetChemicalPotential("Hydroxide", muOH);
   world.SetChemicalPotential("Chloride", muCl); // changed here
