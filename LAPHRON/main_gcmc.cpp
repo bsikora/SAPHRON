@@ -74,9 +74,13 @@ int main(int narg, char **arg)
   int numOH = atof(arg[9]);
   int numCl = atof(arg[10]);
 
-  double muNa = -log(box*box*box/numNa);
-  double muOH = -log(box*box*box/numOH);
-  double muCl = -log(box*box*box/numCl);
+  double muNa_excess = atof(arg[11]);
+  double muOH_excess = atof(arg[12]);
+  double muCl_excess = atof(arg[13]);
+
+  double muNa = -log(box*box*box/numNa) + muNa_excess;
+  double muOH = -log(box*box*box/numOH) + muOH_excess;
+  double muCl = -log(box*box*box/numCl) + muCl_excess;
   // taking into account minimum image convention
   if (coulcut > (box/2))
   {
@@ -227,10 +231,14 @@ int main(int narg, char **arg)
   //Set up moves
   MoveManager MM (seed);
   //AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
-  InsertParticleMove Ins1({{"Sodium"},{"Chloride"}}, WM, 20, true,seed + 3);
-  InsertParticleMove Ins2({{"Hydroxide"},{"Sodium"}}, WM, 20, true,seed + 30);
-  DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
-  DeleteParticleMove Del2({{"Hydroxide"}, {"Sodium"}}, true, seed + 40);
+  InsertParticleMove Ins1({{"Sodium"}}, WM, 20, false,seed + 3);
+  InsertParticleMove Ins2({{"Hydroxide"}}, WM, 20, false,seed + 30);
+  InsertParticleMove Ins3({{"Chloride"}}, WM, 20, false,seed + 70);
+
+  DeleteParticleMove Del1({{"Sodium"}}, false, seed + 4);
+  DeleteParticleMove Del2({{"Hydroxide"}}, false, seed + 40);
+  DeleteParticleMove Del3({{"Chloride"}}, false, seed + 80);
+
   //AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
   //SpeciesSwapMove AnnMv({{"dMonomer"},{"Monomer"}},true, seed+6);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
@@ -238,8 +246,10 @@ int main(int narg, char **arg)
   //MM.AddMove(&AnnMv);
   MM.AddMove(&Ins1);
   MM.AddMove(&Ins2);
+  MM.AddMove(&Ins3);
   MM.AddMove(&Del1);
   MM.AddMove(&Del2);
+  MM.AddMove(&Del3);
   //MM.AddMove(&AcidMv);
   //MM.AddMove(&AcidTitMv);
 
@@ -394,15 +404,15 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
 void WriteResults(World &world, std::ofstream& results_file, double &debye)
 {
   results_file.open("chemical_pot" + std::to_string(debye)+"_results.dat", std::ofstream::app);
-  const double mu_ex_Na = world.GetChemicalPotential("Sodium");
-  const double mu_ex_OH = world.GetChemicalPotential("Hydroxide");
-  const double mu_ex_Cl = world.GetChemicalPotential("Chloride");
+  const double mu_Na = world.GetChemicalPotential("Sodium");
+  const double mu_OH = world.GetChemicalPotential("Hydroxide");
+  const double mu_Cl = world.GetChemicalPotential("Chloride");
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if (rank == 0)
   {
-    results_file<<mu_ex_Na<<" "<<mu_ex_OH<<" "<<mu_ex_Cl<<std::endl;
+    results_file<<mu_Na<<" "<<mu_OH<<" "<<mu_Cl<<std::endl;
     results_file.close();
   }
 }
