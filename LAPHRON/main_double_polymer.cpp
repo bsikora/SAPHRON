@@ -42,8 +42,8 @@ using namespace LAMMPS_NS;
 LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
 void setSaphronBondedNeighbors(ParticleList &Monomers);
 void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand);
-void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
-void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file);
+void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);//dfinsdkjcnkdsjkjkkjkdfjk
+void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file); // soicndcndjfkjsd
 void WriteResults(LAMMPS* lmp, ParticleList &MonomersA, ParticleList &MonomersB, std::ofstream& results_file, double &debye);
 void WriteDump(LAMMPS* lmp, World &world, std::ofstream& dump_file, double &debye, int &loop); //dsjkbdjcjhkjbdjhdhjb
 
@@ -99,13 +99,19 @@ int main(int narg, char **arg)
   lmp = new LAMMPS(0, NULL, comm_lammps);
   ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
 
+  cout << "I am here"<<endl;
   int natoms = static_cast<int> (lmp->atom->natoms);
+  cout << natoms << "this is the number of atoms"<<endl;
   double *x = new double[3*natoms];
   int *type = new int[natoms];
   lammps_gather_atoms(lmp, "x", 1, 3, x);
   lammps_gather_atoms(lmp,"type", 0, 1, type);
+  cout << "we are here AI"<<endl;
   
   /////////////////SETUP SAPHRON//////////////////////////////////////////////////////////////////////
+  World world(1000.0, 1000.0, 1000.0, coulcut, seed + 1);
+  world.SetTemperature(1.0);
+
   ParticleList MonomersA;
   ParticleList MonomersB;
   SAPHRON::Particle polyA("PolymerA");
@@ -116,11 +122,11 @@ int main(int narg, char **arg)
   {
     if(type[i/3] == 1)
     {
-      MonomersA.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "MonomerA"));
+      MonomersA.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "MonoA"));
     }
     if(type[i/3] == 2)
     {
-      MonomersB.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "MonomerB"));
+      MonomersB.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "MonoB"));
     }
   }
 
@@ -130,24 +136,39 @@ int main(int narg, char **arg)
   for(auto& m : MonomersB)
     m->SetCharge(0.0);
 
-
 // SETTING THE NEIGHBORS IN THE SAPHRON WORLD, SINCE LINEAR POLYMERS
-  for(int i=1; i < MonomersA.size()-1; i++)
+
+
+
+int MonomersA_size = (int)double(MonomersA.size());
+int MonomersB_size = (int)double(MonomersB.size());
+
+  for(int i=1; i < MonomersA_size-1; i++)
   {
     MonomersA[i]->AddBondedNeighbor(MonomersA[i+1]);
     MonomersA[i]->AddBondedNeighbor(MonomersA[i-1]);
   }
   MonomersA[0]->AddBondedNeighbor(MonomersA[1]);
-  MonomersA[natoms-1]->AddBondedNeighbor(MonomersA[natoms-2]);
+  MonomersA[MonomersA_size-1]->AddBondedNeighbor(MonomersA[MonomersA_size-2]);
 
-  for(int i=1; i < MonomersB.size()-1; i++)
+
+  for(int i=2; i < MonomersB_size-1; i++)
   {
     MonomersB[i]->AddBondedNeighbor(MonomersB[i+1]);
     MonomersB[i]->AddBondedNeighbor(MonomersB[i-1]);
   }
-  MonomersB[0]->AddBondedNeighbor(MonomersB[1]);
-  MonomersB[natoms-1]->AddBondedNeighbor(MonomersB[natoms-2]);
+  MonomersB[1]->AddBondedNeighbor(MonomersB[2]);
+  MonomersB[0]->AddBondedNeighbor(MonomersB[MonomersB_size-1]);
+  MonomersB[MonomersB_size-1]->AddBondedNeighbor(MonomersB[MonomersB_size-2]);
+  MonomersB[MonomersB_size-1]->AddBondedNeighbor(MonomersB[0]);
 
+  for(auto& c : MonomersB)
+  {
+    cout << "for MonomersB species ID" << c->GetGlobalIdentifier() << " bonded to: ";
+    for(auto& b : c->GetBondedNeighbors())
+      cout<<b->GetGlobalIdentifier()<<" ";
+      cout<<endl;  
+  }
 
 // ADD MONOMERS AS A CHILD FOR THE POLYMERS 
   for(auto& c : MonomersA)
@@ -163,21 +184,20 @@ int main(int narg, char **arg)
   DebyeHuckelFF debHuc(kappa, {coulcut});
   ffm.SetElectrostaticForcefield(debHuc);
 
-  ffm.AddNonBondedForceField("MonomerA", "MonomerA", lj);
-  ffm.AddNonBondedForceField("MonomerB", "MonomerB", lj);
-  ffm.AddNonBondedForceField("MonomerA", "MonomerB", lj);
-  ffm.AddBondedForceField("MonomerA", "MonomerA", lj);
-  ffm.AddBondedForceField("MonomerA", "MonomerA", fene);
-  ffm.AddBondedForceField("MonomerA", "MonomerA", debHuc);
-  ffm.AddBondedForceField("MonomerB", "MonomerB", lj);
-  ffm.AddBondedForceField("MonomerB", "MonomerB", fene);
-  ffm.AddBondedForceField("MonomerB", "MonomerB", debHuc);
+  ffm.AddNonBondedForceField("MonoA", "MonoA", lj);
+  ffm.AddNonBondedForceField("MonoB", "MonoB", lj);
+  ffm.AddNonBondedForceField("MonoA", "MonoB", lj);
+  ffm.AddBondedForceField("MonoA", "MonoA", lj);
+  ffm.AddBondedForceField("MonoA", "MonoA", fene);
+  ffm.AddBondedForceField("MonoA", "MonoA", debHuc);
+  ffm.AddBondedForceField("MonoB", "MonoB", lj);
+  ffm.AddBondedForceField("MonoB", "MonoB", fene);
+  ffm.AddBondedForceField("MonoB", "MonoB", debHuc);
 
   
   // CREATE WORLD
   WorldManager WM;
-  World world(1000.0, 1000.0, 1000.0, coulcut, seed + 1);
-  world.SetTemperature(1.0);
+
   WM.AddWorld(&world);
   world.AddParticle(&polyA);
   world.AddParticle(&polyB);
@@ -186,8 +206,8 @@ int main(int narg, char **arg)
   MoveManager MM (seed);
   AnnealChargeMove AnnMvA({{"PolymerA"}}, seed + 2);
   AnnealChargeMove AnnMvB({{"PolymerB"}}, seed + 2);
-  AcidTitrationMove AcidTitMvA({{"MonomerA"}}, 1.67, mu, seed + 6);  //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
-  AcidTitrationMove AcidTitMvB({{"MonomerB"}}, -1.67, mu, seed + 6); // REPRESENTING POLYBASE
+  AcidTitrationMove AcidTitMvA({{"MonoA"}}, 1.67, mu, seed + 6);  //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
+  AcidTitrationMove AcidTitMvB({{"MonoB"}}, -1.67, mu, seed + 6); // REPRESENTING POLYBASE
 
   MM.AddMove(&AnnMvA);
   MM.AddMove(&AnnMvB);
