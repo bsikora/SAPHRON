@@ -140,8 +140,8 @@ int main(int narg, char **arg)
 
 
 
-int MonomersA_size = (int)double(MonomersA.size());
-int MonomersB_size = (int)double(MonomersB.size());
+  int MonomersA_size = (int)double(MonomersA.size());
+  int MonomersB_size = (int)double(MonomersB.size());
 
   for(int i=1; i < MonomersA_size-1; i++)
   {
@@ -151,16 +151,13 @@ int MonomersB_size = (int)double(MonomersB.size());
   MonomersA[0]->AddBondedNeighbor(MonomersA[1]);
   MonomersA[MonomersA_size-1]->AddBondedNeighbor(MonomersA[MonomersA_size-2]);
 
-
-  for(int i=2; i < MonomersB_size-1; i++)
+  for(int i=1; i < MonomersB_size-1; i++)
   {
     MonomersB[i]->AddBondedNeighbor(MonomersB[i+1]);
     MonomersB[i]->AddBondedNeighbor(MonomersB[i-1]);
   }
-  MonomersB[1]->AddBondedNeighbor(MonomersB[2]);
-  MonomersB[0]->AddBondedNeighbor(MonomersB[MonomersB_size-1]);
+  MonomersB[0]->AddBondedNeighbor(MonomersB[1]);
   MonomersB[MonomersB_size-1]->AddBondedNeighbor(MonomersB[MonomersB_size-2]);
-  MonomersB[MonomersB_size-1]->AddBondedNeighbor(MonomersB[0]);
 
   for(auto& c : MonomersB)
   {
