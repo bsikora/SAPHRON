@@ -124,7 +124,7 @@ int main(int narg, char **arg)
     {
       MonomersA.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "MonoA"));
     }
-    if(type[i/3] == 2)
+    else if(type[i/3] == 2)
     {
       MonomersB.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "MonoB"));
     }
@@ -234,21 +234,19 @@ int MonomersB_size = (int)double(MonomersB.size());
     lammps_gather_atoms(lmp,"type", 0, 1, type);
 
     // Set position of monomers
+    int Ai = 0;
+    int Bi = 0;
     for(int i=0; i<natoms*3; i=i+3)
     {
       if(type[i/3] == 1)
       {
-        MonomersA[int(i/3)]->SetPosition({x[i],x[i+1],x[i+2]});
+        MonomersA[Ai]->SetPosition({x[i],x[i+1],x[i+2]});
+        Ai++;
       }
-    }
-    // check here if this is right
-    int kk = 0;
-    for(int i=0; i<natoms*3; i=i+3)
-    {
-      if(type[i/3] == 2)
+      else if(type[i/3] == 2)
       {
-        MonomersB[kk]->SetPosition({x[i],x[i+1],x[i+2]});
-        kk++;
+        MonomersB[Bi]->SetPosition({x[i],x[i+1],x[i+2]});
+        Bi++;
       }
     }
 
