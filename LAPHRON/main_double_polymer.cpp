@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <fstream>
 #include <chrono>
@@ -43,7 +44,7 @@ LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
 void setSaphronBondedNeighbors(ParticleList &Monomers);
 void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand);
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);//dfinsdkjcnkdsjkjkkjkdfjk
-void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file); // soicndcndjfkjsd
+void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file, double &box); // soicndcndjfkjsd
 void WriteResults(LAMMPS* lmp, ParticleList &MonomersA, ParticleList &MonomersB, std::ofstream& results_file, double &debye);
 void WriteDump(LAMMPS* lmp, World &world, std::ofstream& dump_file, double &debye, int &loop); //dsjkbdjcjhkjbdjhdhjb
 
@@ -68,6 +69,11 @@ int main(int narg, char **arg)
   double coulcut = (1.0/kappa)*5.0;
   double mu = atof(arg[5]);
   double debye = atof(arg[6]);
+  double box = atof(arg[7]);
+  if (coulcut > (box/2))
+  {
+    coulcut = box/2;
+  }
 
   std::ofstream dump_file;
   dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::out);
@@ -109,7 +115,7 @@ int main(int narg, char **arg)
   cout << "we are here AI"<<endl;
   
   /////////////////SETUP SAPHRON//////////////////////////////////////////////////////////////////////
-  World world(1000.0, 1000.0, 1000.0, coulcut, seed + 1);
+  World world(box, box, box, coulcut, seed + 1);
   world.SetTemperature(1.0);
 
   ParticleList MonomersA;
@@ -204,12 +210,22 @@ int main(int narg, char **arg)
   AnnealChargeMove AnnMvA({{"PolymerA"}}, seed + 2);
   AnnealChargeMove AnnMvB({{"PolymerB"}}, seed + 2);
   AcidTitrationMove AcidTitMvA({{"MonoA"}}, 1.67, mu, seed + 6);  //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
-  AcidTitrationMove AcidTitMvB({{"MonoB"}}, -1.67, mu, seed + 6); // REPRESENTING POLYBASE
+  AcidTitrationMove AcidTitMvB({{"MonoB"}}, -1.67, -mu, seed + 6); // REPRESENTING POLYBASE
 
   MM.AddMove(&AnnMvA);
   MM.AddMove(&AnnMvB);
   MM.AddMove(&AcidTitMvA);
   MM.AddMove(&AcidTitMvB);
+
+
+  std::ofstream data_file;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if (rank == 0)
+    data_file.open("data."+lammpsfile, std::ofstream::out);
+  WriteDataFile(lmp, world, data_file, box);
+  if (rank == 0)
+    data_file.close();
 
   delete lmp;
   delete [] x;
@@ -235,12 +251,12 @@ int main(int narg, char **arg)
     int Bi = 0;
     for(int i=0; i<natoms*3; i=i+3)
     {
-      if(type[i/3] == 1)
+      if(type[i/3] == 2)
       {
         MonomersA[Ai]->SetPosition({x[i],x[i+1],x[i+2]});
         Ai++;
       }
-      else if(type[i/3] == 2)
+      else if(type[i/3] == 3)
       {
         MonomersB[Bi]->SetPosition({x[i],x[i+1],x[i+2]});
         Bi++;
@@ -255,7 +271,7 @@ int main(int narg, char **arg)
     {
       std::ofstream data_file;
       data_file.open("data."+lammpsfile, std::ofstream::out);
-      WriteDataFile(lmp, world, data_file);
+      WriteDataFile(lmp, world, data_file, box);
       data_file.close();
       WriteResults(lmp, MonomersA, MonomersB, results_file, debye);
       if (hit_detection_numb == 9)
@@ -362,13 +378,13 @@ void WriteResults(LAMMPS* lmp, ParticleList &MonomersA, ParticleList &MonomersB,
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if (rank == 0)
   {
-  results_file<<f_valueA<<" "<<f_valueB<<" "<<Rg_polyA_value<<" "<<Rg_polyB_value<<" "<<Rg_polyAB_value<<" "<<PE_value<<" "<<Total_E_value<<std::endl;
+  results_file<<setprecision(3)<< fixed <<f_valueA<<"     "<<f_valueB<<"     "<<Rg_polyA_value<<"     "<<Rg_polyB_value<<"     "<<Rg_polyAB_value<<"     "<<PE_value<<"     "<<Total_E_value<<std::endl;
   results_file.close();
   }
 }
 
 //  WRITE THE LAMMPS DATA FILE
-void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs)
+void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double &box)
 {
   int natoms = static_cast<int> (lmp->atom->natoms);
   double *vel = new double[3*natoms]; 
@@ -489,21 +505,21 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs)
       std::string s6 = "xlo";
       if (s2.std::string::find(s6) != std::string::npos)
       {
-        ofs<<"       0.0 1000.0 xlo xhi"<<std::endl;
+        ofs<<"       0.0 "<< box <<" xlo xhi"<<std::endl;
         continue;
       }
 
       std::string s7 = "ylo";
       if (s2.std::string::find(s7) != std::string::npos)
       {
-        ofs<<"       0.0 1000.0 ylo yhi"<<std::endl;
+        ofs<<"       0.0 "<< box <<" ylo yhi"<<std::endl;
         continue;
       }
 
       std::string s8 = "zlo";
       if (s2.std::string::find(s8) != std::string::npos)
       {
-        ofs<<"       0.0 1000.0 zlo zhi"<<std::endl;
+        ofs<<"       0.0 "<< box <<" zlo zhi"<<std::endl;
         continue;
       }
 
