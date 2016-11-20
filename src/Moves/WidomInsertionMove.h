@@ -130,10 +130,9 @@ namespace SAPHRON
 				}
 			
 				w->AddParticle(p);
-				widomparticles.push_back(p);
 			}
 
-			for(auto& p : widomparticles)
+			for(auto& p : _ghosts)
 				ef += ffm->EvaluateEnergy(*p);
 
 			// Update tail correction.
