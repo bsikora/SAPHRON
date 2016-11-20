@@ -252,6 +252,84 @@ namespace SAPHRON
 		return ep;
 	}
 
+	EPTuple ForceFieldManager::EvaluateInterEnergy(const Particle& particle, const Particle& particle2) const
+	{
+		if(_nonbondedforcefields.empty())
+			return EPTuple();
+
+		double intere = 0, electroe = 0, pxx = 0, pxy = 0, pxz = 0, pyy = 0, pyz = 0, pzz = 0;
+
+		// Get appropriate world and ID.
+		World* world = particle.GetWorld();
+		if(!particle.HasChildren())
+		{
+			unsigned wid = (world == nullptr) ? 0 : world->GetID();
+
+			Position rij = particle.GetPosition() - particle2.GetPosition();
+											
+			if(world != nullptr)
+				world->ApplyMinimumImage(&rij);
+
+			// If particle has parent, compute vector between parent Particle(s).
+			Position rab = rij;
+			if(particle.HasParent() && particle2.HasParent())
+			{
+				rab = particle.GetParent()->GetPosition() - particle2.GetParent()->GetPosition();
+				if(world != nullptr)
+					world->ApplyMinimumImage(&rab);
+			}
+			else if(particle2.HasParent() && !particle.HasParent()) 
+			{
+				rab = particle.GetPosition() - particle2.GetParent()->GetPosition();
+				if(world != nullptr)
+					world->ApplyMinimumImage(&rab);
+			}
+			else if(!particle2.HasParent() && particle.HasParent()) {
+				rab = particle.GetParent()->GetPosition() - particle2.GetPosition();
+				if(world != nullptr)
+					world->ApplyMinimumImage(&rab);
+			}
+
+			auto it = _nonbondedforcefields.find({particle.GetSpeciesID(),particle2.GetSpeciesID()});
+
+			Interaction interij, electroij;
+
+			// Interaction containing energy and virial.
+			if(it != _nonbondedforcefields.end())
+			{
+				auto* ff = it->second;
+				interij = ff->Evaluate(particle, particle2, rij, wid);
+			}
+
+			//Electrostatics containing energy and virial
+			if(_electroff != nullptr)
+				electroij = _electroff->Evaluate(particle, particle2, rij, wid);
+			
+			intere += interij.energy; // Sum nonbonded van der Waal energy.
+			electroe += electroij.energy; // Sum electrostatic energy
+
+			auto totalvirial = interij.virial + electroij.virial;
+			
+			pxx += totalvirial * rij[0] * rab[0];
+			pyy += totalvirial * rij[1] * rab[1];
+			pzz += totalvirial * rij[2] * rab[2];
+			pxy += totalvirial * 0.5 * (rij[0] * rab[1] + rij[1] * rab[0]);
+			pxz += totalvirial * 0.5 * (rij[0] * rab[2] + rij[2] * rab[0]);
+			pyz += totalvirial * 0.5 * (rij[1] * rab[2] + rij[2] * rab[1]);				
+		}
+
+		EPTuple ep{intere, 0, electroe, 0, 0, 0, 0, 0, 0, -pxx, -pxy, -pxz, -pyy, -pyz, -pzz, 0};				
+		
+		for(auto& child : particle)
+			ep += EvaluateInterEnergy(*child);	
+		
+		// Divide virial by volume to get pressure if there's a world.
+		if(world != nullptr)
+		ep.pressure /= world->GetVolume();
+
+		return ep;
+	}
+
 	EPTuple ForceFieldManager::EvaluateInterEnergy(const World& world) const
 	{
 		EPTuple ep; 

@@ -175,8 +175,14 @@ namespace SAPHRON
 				// Can be adjusted later if wated.
 
 				w->AddParticle(plist[i]);
-				ef += ffm->EvaluateEnergy(*plist[i]);
 			}
+
+			for (unsigned int i = 0; i < NumberofParticles; i++)
+				ef += ffm->EvaluateEnergy(*plist[i]);
+
+			for (unsigned int i = 0; i < NumberofParticles-1; i++)
+				for (unsigned int j = i+1; j < NumberofParticles; j++)
+					ef -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
 
 			// Evaluate current tail energy and add diff to energy.
 			auto wef = ffm->EvaluateTailEnergy(*w);

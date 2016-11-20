@@ -95,6 +95,10 @@ namespace SAPHRON
 		// This includes constraint energy. 
 		EPTuple EvaluateInterEnergy(const Particle& particle) const;
 
+		// Evaluates the intermolecular energy of a particle.
+		// This includes constraint energy. 
+		EPTuple EvaluateInterEnergy(const Particle& particle, const Particle& particle2) const;
+
 		// Evaluates the intermolecular energy of a world.
 		EPTuple EvaluateInterEnergy(const World& world) const;
 
@@ -111,6 +115,10 @@ namespace SAPHRON
 		// Evaluates the total energy of a particle including inter
 		// and intra.
 		EPTuple EvaluateEnergy(const Particle& particle) const;
+
+		// Evaluates the total energy of a particle including inter
+		// and intra.
+		EPTuple EvaluateEnergy(const Particle& particle, const Particle& particle2) const;
 
 		// Evaluate total energy of the world including inter, intra
 		// and tail.
