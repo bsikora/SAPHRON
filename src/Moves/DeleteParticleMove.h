@@ -122,19 +122,17 @@ namespace SAPHRON
 
 				Prefactor*=(lambda*lambda*lambda*N)/V*exp(-beta*mu);
 
-				// Evaluate old energy. For multi deletion moves
-				// Need to remove particle one by one so energy
-				// is not double counted.
+				// Evaluate old energy.
 				ei += ffm->EvaluateEnergy(*plist[i]);
 			}
 
 			for (unsigned int i = 0; i < NumberofParticles-1; i++)
 				for (unsigned int j = i+1; j < NumberofParticles; j++)
-					ef -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
+					ei -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 				w->RemoveParticle(plist[i]);
-			
+
 			// Evaluate current tail energy and add diff to energy.
 			auto wef = ffm->EvaluateTailEnergy(*w);
 			ei.energy.tail = wei.tail - wef.energy.tail;
