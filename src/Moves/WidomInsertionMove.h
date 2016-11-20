@@ -130,10 +130,8 @@ namespace SAPHRON
 				}
 			
 				w->AddParticle(p);
-			}
-
-			for(auto& p : _ghosts)
 				ef += ffm->EvaluateEnergy(*p);
+			}
 
 			// Update tail correction.
 			ef.energy.tail = 2*(ffm->EvaluateTailEnergy(*w).energy.tail - wei.tail);
