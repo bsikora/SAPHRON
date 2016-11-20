@@ -103,6 +103,7 @@ namespace SAPHRON
 			// Get random world.
 			World* w = wm->GetRandomWorld();
 			EPTuple ef;
+			ParticleList widomparticles;
 
 			// Get world energy for tail. 
 			auto wei = w->GetEnergy();
@@ -129,8 +130,11 @@ namespace SAPHRON
 				}
 			
 				w->AddParticle(p);
-				ef += ffm->EvaluateEnergy(*p);
+				widomparticles.push_back(p);
 			}
+
+			for(auto& p : widomparticles)
+				ef += ffm->EvaluateEnergy(*p);
 
 			// Update tail correction.
 			ef.energy.tail = 2*(ffm->EvaluateTailEnergy(*w).energy.tail - wei.tail);
