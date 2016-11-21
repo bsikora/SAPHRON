@@ -88,8 +88,9 @@ int main(int narg, char **arg)
   dump_file<<"id   type   q   x   y   z   ix   iy   iz"<<std::endl;
   dump_file.close();
   std::ofstream results_file;
-  results_file.open("excess_chemical_pot_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
-  results_file<<"Na   OH   Cl"<<std::endl;
+  results_file.open("New_excess_chemical_pot_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
+  //results_file<<"Na   OH   Cl"<<std::endl;
+  results_file<<"Na   Cl"<<std::endl;
   results_file.close();
   //std::ifstream datatrial("data.trial", std::ios::binary);
   //std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
@@ -161,14 +162,14 @@ int main(int narg, char **arg)
   //SAPHRON::Particle poly("Polymer");
   SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium"); // set pointers
   SAPHRON::Particle* chloride = new Particle({100.0,0.0,0.0},{0.0,0.0,0.0}, "Chloride");
-  SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
-  SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
-  SAPHRON::Particle* sodium3 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
+  //SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
+  //SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
+  //SAPHRON::Particle* sodium3 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
 
   sodium->SetCharge(1.67); // dereference the pointer and set the charge
-  sodium2->SetCharge(1.67);
-  sodium3->SetCharge(1.67);
-  Hydroxide->SetCharge(-1.67);
+  //sodium2->SetCharge(1.67);
+  //sodium3->SetCharge(1.67);
+  //Hydroxide->SetCharge(-1.67);
   chloride->SetCharge(-1.67);
 
   /*for(int i=0; i<natoms*3; i=i+3)
@@ -202,18 +203,18 @@ int main(int narg, char **arg)
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
-    else if(type[i/3] == 2)
+    else if(type[i/3] == 2 || type[i/3] == 1)
     {
       Particle* pnew = chloride->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
-    else if(type[i/3] == 1)
+    /*else if(type[i/3] == 1)
     {
       Particle* pnew = Hydroxide->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
-    }
+    }*/
   }
 
   //Create world
@@ -223,7 +224,7 @@ int main(int narg, char **arg)
   WorldManager WM;
   WM.AddWorld(&world);
   world.SetChemicalPotential("Sodium", muNa);
-  world.SetChemicalPotential("Hydroxide", muOH);
+  //world.SetChemicalPotential("Hydroxide", muOH);
   world.SetChemicalPotential("Chloride", muCl); // changed here
 
   //Create forcefields
@@ -234,9 +235,9 @@ int main(int narg, char **arg)
   DSFFF DSF(0, {coulcut});
   ffm.SetElectrostaticForcefield(DSF);
 
-  ffm.AddNonBondedForceField("Hydroxide", "Chloride", lj2);
-  ffm.AddNonBondedForceField("Hydroxide", "Hydroxide", lj2);
-  ffm.AddNonBondedForceField("Hydroxide", "Sodium", lj2);
+  //ffm.AddNonBondedForceField("Hydroxide", "Chloride", lj2);
+  //ffm.AddNonBondedForceField("Hydroxide", "Hydroxide", lj2);
+  //ffm.AddNonBondedForceField("Hydroxide", "Sodium", lj2);
   ffm.AddNonBondedForceField("Chloride", "Chloride", lj2);
   ffm.AddNonBondedForceField("Chloride", "Sodium", lj2);
   ffm.AddNonBondedForceField("Sodium", "Sodium", lj2);
@@ -251,18 +252,20 @@ int main(int narg, char **arg)
   //AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
   //SpeciesSwapMove AnnMv({{"dMonomer"},{"Monomer"}},true, seed+6);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
-  WidomInsertionMove widomNa({"Sodium"}, WM, seed+9000 );
-  WidomInsertionMove widomOH({"Hydroxide"}, WM, seed+9001 );
-  WidomInsertionMove widomCl({"Chloride"}, WM, seed+9002 );
+  WidomInsertionMove widomNa({{"Sodium"}, {"Chloride"}}, WM, seed+9000 );
+  //WidomInsertionMove widomOH({"Hydroxide"}, WM, seed+9001 );
+  //WidomInsertionMove widomCl({"Chloride"}, WM, seed+9002 );
 
   //MM.AddMove(&AnnMv);
   //MM.AddMove(&Ins1);
   //MM.AddMove(&Ins2);
   //MM.AddMove(&Del1);
   //MM.AddMove(&Del2);
+  
   MM.AddMove(&widomNa);
-  MM.AddMove(&widomOH);
-  MM.AddMove(&widomCl);
+  //MM.AddMove(&widomOH);
+  //MM.AddMove(&widomCl);
+
   //MM.AddMove(&AcidMv);
   //MM.AddMove(&AcidTitMv);
 
@@ -417,16 +420,17 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
 
 void WriteResults(World &world, std::ofstream& results_file, double &debye)
 {
-  results_file.open("excess_chemical_pot_" + std::to_string(debye)+"_results.dat", std::ofstream::app);
+  results_file.open("New_excess_chemical_pot_" + std::to_string(debye)+"_results.dat", std::ofstream::app);
   const double mu_ex_Na = world.GetChemicalPotential("Sodium");
-  const double mu_ex_OH = world.GetChemicalPotential("Hydroxide");
+  //const double mu_ex_OH = world.GetChemicalPotential("Hydroxide");
   const double mu_ex_Cl = world.GetChemicalPotential("Chloride");
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if (rank == 0)
   {
-    results_file<<mu_ex_Na<<" "<<mu_ex_OH<<" "<<mu_ex_Cl<<std::endl;
+    //results_file<<mu_ex_Na<<" "<<mu_ex_OH<<" "<<mu_ex_Cl<<std::endl;
+    results_file<<mu_ex_Na<<" "<<mu_ex_Cl<<std::endl;
     results_file.close();
   }
 }
