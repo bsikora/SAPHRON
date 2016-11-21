@@ -332,7 +332,8 @@ int main(int narg, char **arg)
       }
     }
 
-    SAPHRONLoop(MM, WM, ffm, world);
+    if(loop > int(numloops/5))
+      SAPHRONLoop(MM, WM, ffm, world);
 
     int totalatoms = world.GetPrimitiveCount();
 
