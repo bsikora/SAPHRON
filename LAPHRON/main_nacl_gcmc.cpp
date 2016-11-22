@@ -5,6 +5,7 @@
 #include <ctime>
 #include "stdio.h"
 #include <math.h> 
+#include <cmath> 
 #include "stdlib.h"
 #include <string.h>
 #include <string>
@@ -41,12 +42,11 @@ using namespace LAMMPS_NS;
 
 // forward declaration
 LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
-void setSaphronBondedNeighbors(ParticleList &Monomers);
-void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand); //dfvkjdnfvkkdfkjkj
-void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world); //dfvjkdfkjfdejkjkjkdf
-void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file, double box, int totalatoms); // fdskjfdjkkjfdjk
-void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
-void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop);//fjknkfvnknfvkjer
+void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand);
+void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
+void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file, double box, int totalatoms);
+void WriteResults(World &world, std::ofstream& results_file, double &debye, double &mu_NaCl_calc); // erkjnfjvkjk
+void WriteDump(LAMMPS* lmp, World &world, std::ofstream& dump_file, double &debye, int &loop); // erdjkfdkjjkdfjnk
 
 // Main code
 int main(int narg, char **arg)
@@ -73,14 +73,19 @@ int main(int narg, char **arg)
   int numNa = atof(arg[8]);
   int numOH = atof(arg[9]);
   int numCl = atof(arg[10]);
+  numCl = numOH + numCl;
 
   double muNa_excess = atof(arg[11]);
   double muOH_excess = atof(arg[12]);
   double muCl_excess = atof(arg[13]);
 
-  double muNa = -log(box*box*box/numNa) + muNa_excess;
+  double muNa = (-log(box*box*box/numNa) + muNa_excess); // multiply by 0.5
   double muOH = -log(box*box*box/numOH) + muOH_excess;
-  double muCl = -log(box*box*box/numCl) + muCl_excess;
+  double muCl = (-log(box*box*box/numCl) + muCl_excess); // multiply by 0.5
+
+  // this is the chemical potential of whole salt
+  double box_volume = box*box*box;
+  double mu_NaCl_calc = 1.0*log(pow(numNa/box_volume, 0.5) * pow(numCl/box_volume, 0.5)) + 0.5*muNa_excess + 0.5*muCl_excess;
 
   // taking into account minimum image convention
   if (coulcut > (box/2))
@@ -93,13 +98,9 @@ int main(int narg, char **arg)
   dump_file<<"id   type   q   x   y   z   ix   iy   iz"<<std::endl;
   dump_file.close();
   std::ofstream results_file;
-  results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
-  results_file<<"f   Rg   Potential_Energy"<<std::endl;
+  results_file.open("New_chemical_pot" + std::to_string(debye)+"_results.dat", std::ofstream::out);
+  results_file<<"Na    cl    mu_salt_saph    mu_NaCl_calc"<<std::endl;
   results_file.close();
-  std::ifstream datatrial("data.trial", std::ios::binary);
-  std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
-
-  dtfile << datatrial.rdbuf();
 
   int seed = time(NULL); //seed used for this simulation
 
@@ -116,25 +117,11 @@ int main(int narg, char **arg)
   int xrand = rand()%99999999+1;   
   LAMMPS *lmp;
   lmp = new LAMMPS(0, NULL, comm_lammps);
-  ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
+  std::string ions_input_file = "in.just_OH_and_salt";
+  ReadInputFile(ions_input_file, comm_lammps, lmp, xrand);
   
   string random;
   char line[1024];
-
-  random = "create_atoms 3 random " + std::to_string(numNa) + " 45438 NULL";
-  std::cout<<"CREATED: "<<random<<std::endl;
-  strcpy(line,random.c_str());
-  lmp->input->one(line);
-
-  random = "create_atoms 4 random " + std::to_string(numCl) + " 354324 NULL";
-  strcpy(line,random.c_str());
-  lmp->input->one(line);
-
-  random = "create_atoms 5 random " + std::to_string(numOH) + " 4538 NULL";
-  strcpy(line,random.c_str());
-  lmp->input->one(line);
-
-  lmp->input->one("minimize 1.0e-4 1.0e-6 100 1000");
 
   int natoms = static_cast<int> (lmp->atom->natoms);
   double *x = new double[3*natoms];
@@ -146,43 +133,12 @@ int main(int narg, char **arg)
   World world(box, box, box, coulcut, seed + 1); // same as lammps input data file
   world.SetTemperature(1.0);
 
-  ParticleList Monomers;   // list of pointers
-  SAPHRON::Particle poly("Polymer");
   SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium"); // set pointers
   SAPHRON::Particle* chloride = new Particle({100.0,0.0,0.0},{0.0,0.0,0.0}, "Chloride");
-  SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
-  SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
-  SAPHRON::Particle* sodium3 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
 
   sodium->SetCharge(1.67); // dereference the pointer and set the charge
-  sodium2->SetCharge(1.67);
-  sodium3->SetCharge(1.67);
-  Hydroxide->SetCharge(-1.67);
   chloride->SetCharge(-1.67);
 
-  for(int i=0; i<natoms*3; i=i+3)
-  {
-    if(type[i/3] == 1 || type[i/3] == 2)
-    {
-      Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
-    }
-  }
-
-  // Set charges on the monomers
-  for(auto& m : Monomers)
-    m->SetCharge(0.0);
-
-  Monomers[0]->SetSpecies("dMonomer"); // first monomer is deprotonated 
-  Monomers[0]->SetCharge(-1.67); // first monomer charged
-
-  // SET BONDED NEIGHBORS  IN ANOTHER FUNCTION by reading the initial data file
-  setSaphronBondedNeighbors(Monomers);
-
-  for(auto& c : Monomers)
-    poly.AddChild(c);
-
-  world.AddParticle(&poly);
-  
   for(int i=0; i<natoms*3; i=i+3)
   {
     if(type[i/3] == 3)
@@ -191,15 +147,9 @@ int main(int narg, char **arg)
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
-    else if(type[i/3] == 4)
+    else if(type[i/3] == 2 || type[i/3] == 1)
     {
       Particle* pnew = chloride->Clone();
-      pnew->SetPosition({x[i],x[i+1],x[i+2]});
-      world.AddParticle(pnew);
-    }
-    else if(type[i/3] == 5)
-    {
-      Particle* pnew = Hydroxide->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
@@ -209,56 +159,27 @@ int main(int narg, char **arg)
   WorldManager WM;
   WM.AddWorld(&world);
   world.SetChemicalPotential("Sodium", muNa);
-  world.SetChemicalPotential("Hydroxide", muOH);
   world.SetChemicalPotential("Chloride", muCl); // changed here
 
   //Create forcefields
   ForceFieldManager ffm;
-  LennardJonesTSFF lj(1.0, 1.0, {2.5}); // Epsilon, sigma, cutoff
+  //LennardJonesTSFF lj(1.0, 1.0, {2.5}); // Epsilon, sigma, cutoff
   LennardJonesTSFF lj2(1.0, 1.0, {1.122}); // Epsilon, sigma, cutoff
-  FENEFF fene(0, 1.0, 7.0, 2.0); // epsilon, sigma, kspring, rmax
+  //FENEFF fene(0, 1.0, 7.0, 2.0); // epsilon, sigma, kspring, rmax
   DSFFF DSF(0, {coulcut});
   ffm.SetElectrostaticForcefield(DSF);
-  ffm.AddNonBondedForceField("Monomer", "Monomer", lj);
-  ffm.AddNonBondedForceField("Monomer", "dMonomer", lj);
-  ffm.AddNonBondedForceField("Monomer", "Chloride", lj2);
-  ffm.AddNonBondedForceField("Monomer", "Hydroxide", lj2);
-  ffm.AddNonBondedForceField("Monomer", "Sodium", lj2);
-  ffm.AddNonBondedForceField("dMonomer", "dMonomer", lj);
-  ffm.AddNonBondedForceField("dMonomer", "Chloride", lj2);
-  ffm.AddNonBondedForceField("dMonomer", "Hydroxide", lj2);
-  ffm.AddNonBondedForceField("dMonomer", "Sodium", lj2);
-  ffm.AddNonBondedForceField("Hydroxide", "Chloride", lj2);
-  ffm.AddNonBondedForceField("Hydroxide", "Hydroxide", lj2);
-  ffm.AddNonBondedForceField("Hydroxide", "Sodium", lj2);
+
   ffm.AddNonBondedForceField("Chloride", "Chloride", lj2);
   ffm.AddNonBondedForceField("Chloride", "Sodium", lj2);
   ffm.AddNonBondedForceField("Sodium", "Sodium", lj2);
 
   //Set up moves
   MoveManager MM (seed);
-  //AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
-  InsertParticleMove Ins1({{"Sodium"}}, WM, 20, false,seed + 3);
-  InsertParticleMove Ins2({{"Hydroxide"}}, WM, 20, false,seed + 30);
-  InsertParticleMove Ins3({{"Chloride"}}, WM, 20, false,seed + 70);
+  InsertParticleMove Ins1({{"Sodium"}, {"Chloride"}}, WM, 20, true, seed + 3);
+  DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
 
-  DeleteParticleMove Del1({{"Sodium"}}, false, seed + 4);
-  DeleteParticleMove Del2({{"Hydroxide"}}, false, seed + 40);
-  DeleteParticleMove Del3({{"Chloride"}}, false, seed + 80);
-  
-  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
-  SpeciesSwapMove AnnMv({{"dMonomer"},{"Monomer"}},true, seed+6);
-  //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
-
-  MM.AddMove(&AnnMv);
   MM.AddMove(&Ins1);
-  MM.AddMove(&Ins2);
-  MM.AddMove(&Ins3);
   MM.AddMove(&Del1);
-  MM.AddMove(&Del2);
-  MM.AddMove(&Del3);
-  MM.AddMove(&AcidMv);
-  //MM.AddMove(&AcidTitMv);
 
   int ta = 0;
   for(const auto& p : world)
@@ -331,10 +252,10 @@ int main(int narg, char **arg)
     WriteDataFile(lmp, world, data_file, box, totalatoms);
     if (rank == 0)
       data_file.close();
-    WriteResults(lmp, Monomers, results_file, debye);
+    WriteResults(world, results_file, debye, mu_NaCl_calc);
     if (hit_detection_numb == 9)
     {
-    	WriteDump(lmp, Monomers, dump_file, debye, loop);
+    	WriteDump(lmp, world, dump_file, debye, loop);
     	hit_detection_numb = -1;
     }
 
@@ -408,25 +329,18 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
   }    
 }
 
-void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye)
+void WriteResults(World &world, std::ofstream& results_file, double &debye, double &mu_NaCl_calc)
 {
-  results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::app);
-  int sumCharge = 0;
-  for(auto& p : Monomers)
-  {
-    if (p->GetCharge() < 0)
-      sumCharge++;
-  }
-
-  double Rg_value = *((double*) lammps_extract_compute(lmp, "Rg_compute", 0, 0));
-  double PE_value = *((double*) lammps_extract_compute(lmp, "myPE", 0, 0));
-  double f_value = double(sumCharge)/double(Monomers.size());
+  results_file.open("New_chemical_pot" + std::to_string(debye)+"_results.dat", std::ofstream::app);
+  const double mu_Na = world.GetChemicalPotential("Sodium");
+  const double mu_Cl = world.GetChemicalPotential("Chloride");
+  double mu_salt_saph = mu_Na + mu_Cl;
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if (rank == 0)
   {
-    results_file<<f_value<<" "<<Rg_value<<" "<<PE_value<<std::endl;
+    results_file<<mu_Na<<" "<<mu_Cl<<" "<<mu_salt_saph<<" "<<mu_NaCl_calc<<std::endl;
     results_file.close();
   }
 }
@@ -459,7 +373,8 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
     std::string garbage;
 
     //Read in file and change what is needed
-    std::ifstream infile("data.trial");
+    // THIS TIME READING IS NOT DATA.TRIAL BUT SOME OTHER FILE that will be template
+    std::ifstream infile("data.template");
     std::string line;
     while (std::getline(infile, line))
     {
@@ -511,7 +426,7 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
           }
           else
           {
-            ofs<<i+1<<" 1 "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
+            ofs<<i+1<<" 1 "<<(p->GetSpeciesID()+1)<<" "<<p->GetCharge()<<" ";
             for(auto& x : p->GetPosition()){
                 ofs<<x<<" ";
             }
@@ -526,38 +441,6 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
       if (s2.std::string::find(s4) != std::string::npos)
       {
         ofs<<"Masses"<<std::endl;
-        ofs<<std::endl;
-        continue;
-      }
-
-      // std::string vstr = "Velocities";
-      // if (s2.std::string::find(vstr) != std::string::npos)
-      // {
-      //   ofs<<"Velocities"<<std::endl;
-      //   ofs<<std::endl;
-
-      //   int ii = 0;
-      //   while(ii < numlammpsatoms) // this while loop is important
-      //     // this makes sure that you don't read lines corresponding to previous lammps coordinates
-      //   {
-      //     std::getline(infile,line);
-      //     if(line.empty())
-      //       continue;
-      //     ii++;
-      //   }
-
-      //   for(int i = 0; i < atoms.size(); i++)
-      //   {
-      //     ofs<<i+1<<" "<<vel[i*3]<<" "<<vel[i*3+1]<<" "<<vel[i*3+2];
-      //     ofs<<std::endl;
-      //   }
-      //   continue;
-      // }
-      
-      std::string s5 = "Bonds";
-      if (s2.std::string::find(s5) != std::string::npos)
-      {
-        ofs<<"Bonds"<<std::endl;
         ofs<<std::endl;
         continue;
       }
@@ -594,57 +477,7 @@ void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& ofs, double box, in
   delete [] type;
 }
 
-void setSaphronBondedNeighbors(ParticleList &Monomers)
-{
-  int var0 = 0;
-  int var1 = 0;
-  int var2 = 0;
-  int var3 = 0;
-
-  cout <<"I am here TOO"<<endl;
-  std::ifstream infile("data.trial");
-  std::string line;
-
-  int ii = 0;
-  int store = 0;
-
-  while (std::getline(infile, line))
-  {
-    if(line.empty())
-      continue;
-
-    std::istringstream iss(line);
-    std::string s2 = iss.str();
-
-    std::string s5 = "Bonds";
-    if (s2.std::string::find(s5) != std::string::npos)
-    {
-      store = ii;
-      break;
-    }
-    ii++;
-  }
-
-  while (std::getline(infile, line))
-  {
-    if(line.empty())
-      continue;
-
-    std::istringstream iss(line);
-
-    if (ii>=store)
-    {
-      iss >> var0 >> var1 >> var2 >> var3;
-      cout << var0 << var1 << var2 << var3 << "\n";
-      cout <<"The line got is "<<line <<endl;
-      Monomers[var2-1]->AddBondedNeighbor(Monomers[var3-1]);
-      Monomers[var3-1]->AddBondedNeighbor(Monomers[var2-1]);
-    }
-  }
-
-}
-
-void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop)
+void WriteDump(LAMMPS* lmp, World &world, std::ofstream& dump_file, double &debye, int &loop)
 {
   int natoms = static_cast<int> (lmp->atom->natoms);
   int *image = new int[natoms];
@@ -661,15 +494,16 @@ void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, do
   int MDstep = loop*1000;
   dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::app);
   dump_file<<"The MD step is: "<<MDstep<<std::endl;
-  for(int i = 0; i < Monomers.size(); i++)
+
+  int k = 0;
+  for(const auto& p : world)
   {
-    dump_file<<i+1<<" "<<Monomers[i]->GetSpeciesID()<<" "<<Monomers[i]->GetCharge()<<" ";
-    auto& xyz = Monomers[i]->GetPosition();
-    for(auto& x : xyz){
+    dump_file<<k+1<<" "<<p->GetSpeciesID()<<" "<<p->GetCharge()<<" ";
+    for(auto& x : p->GetPosition()){
         dump_file<<x<<" ";
     }
-    dump_file<<image_all[i*3]<<" "<<image_all[i*3+1]<<" "<<image_all[i*3+2];
-    dump_file<<std::endl;
+    dump_file<<"0 0 0"<<std::endl;
+    k++;    
   }
   dump_file.close();
 

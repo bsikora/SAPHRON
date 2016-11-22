@@ -332,8 +332,8 @@ int main(int narg, char **arg)
       }
     }
 
-    if(loop > int(numloops/5))
-      SAPHRONLoop(MM, WM, ffm, world);
+    //if(loop > int(numloops/5))
+    SAPHRONLoop(MM, WM, ffm, world);
 
     int totalatoms = world.GetPrimitiveCount();
 
@@ -345,7 +345,7 @@ int main(int narg, char **arg)
     WriteResults(world, results_file, debye);
     if (hit_detection_numb == 9)
     {
-    	WriteDump(lmp, world, dump_file, debye, loop);
+    	//WriteDump(lmp, world, dump_file, debye, loop);
     	hit_detection_numb = -1;
     }
 
