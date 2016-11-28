@@ -45,7 +45,7 @@ void setSaphronBondedNeighbors(ParticleList &Monomers);
 void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand); //dfvkjdnfvkkdfkjkj
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world); //dfvjkdfkjfdejkjkjkdf
 void WriteDataFile(LAMMPS* lmp, World &world, std::ofstream& data_file, double box, int totalatoms); // fdskjfdjkkjfdjk
-void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
+void WriteResults(World &world, LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
 void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop);//fjknkfvnknfvkjer
 
 // Main code
@@ -70,17 +70,15 @@ int main(int narg, char **arg)
   double mu = atof(arg[5]);
   double debye = atof(arg[6]);
   double box = atof(arg[7]);
-  int numNa = atof(arg[8]);
+  int numK = atof(arg[8]);
   int numOH = atof(arg[9]);
-  int numCl = atof(arg[10]);
+  int numNa = atof(arg[10]);
+  int numCl = atof(arg[11]);
 
-  double muNa_excess = atof(arg[11]);
-  double muOH_excess = atof(arg[12]);
-  double muCl_excess = atof(arg[13]);
-
-  double muNa = -log(box*box*box/numNa) + muNa_excess;
-  double muOH = -log(box*box*box/numOH) + muOH_excess;
-  double muCl = -log(box*box*box/numCl) + muCl_excess;
+  double muK = atof(arg[12]);
+  double muOH = atof(arg[13]);
+  double muNa = atof(arg[14]);
+  double muCl = atof(arg[15]);  
 
   // taking into account minimum image convention
   if (coulcut > (box/2))
@@ -88,13 +86,13 @@ int main(int narg, char **arg)
     coulcut = box/2;
   }
 
-  std::ofstream dump_file;
+  /*std::ofstream dump_file;
   dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::out);
   dump_file<<"id   type   q   x   y   z   ix   iy   iz"<<std::endl;
-  dump_file.close();
+  dump_file.close();*/
   std::ofstream results_file;
   results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
-  results_file<<"f   Rg   Potential_Energy"<<std::endl;
+  results_file<<"f   Rg   Potential_Energy   num_K    numOH    num_Na    numCl"<<std::endl;
   results_file.close();
   std::ifstream datatrial("data.trial", std::ios::binary);
   std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
@@ -121,16 +119,20 @@ int main(int narg, char **arg)
   string random;
   char line[1024];
 
-  random = "create_atoms 3 random " + std::to_string(numNa) + " 45438 NULL";
+  random = "create_atoms 3 random " + std::to_string(numK) + " 45438 NULL";
   std::cout<<"CREATED: "<<random<<std::endl;
   strcpy(line,random.c_str());
   lmp->input->one(line);
 
-  random = "create_atoms 4 random " + std::to_string(numCl) + " 354324 NULL";
+  random = "create_atoms 4 random " + std::to_string(numOH) + " 354324 NULL";
   strcpy(line,random.c_str());
   lmp->input->one(line);
 
-  random = "create_atoms 5 random " + std::to_string(numOH) + " 4538 NULL";
+  random = "create_atoms 5 random " + std::to_string(numNa) + " 4538 NULL";
+  strcpy(line,random.c_str());
+  lmp->input->one(line);
+
+  random = "create_atoms 6 random " + std::to_string(numCl) + " 453890 NULL";
   strcpy(line,random.c_str());
   lmp->input->one(line);
 
@@ -148,15 +150,15 @@ int main(int narg, char **arg)
 
   ParticleList Monomers;   // list of pointers
   SAPHRON::Particle poly("Polymer");
+  SAPHRON::Particle* potassium = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Potassium");
+  SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
   SAPHRON::Particle* sodium = new Particle({10.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium"); // set pointers
   SAPHRON::Particle* chloride = new Particle({100.0,0.0,0.0},{0.0,0.0,0.0}, "Chloride");
-  SAPHRON::Particle* sodium2 = new Particle({100.0,10.0,0.0},{0.0,0.0,0.0}, "Sodium");
-  SAPHRON::Particle* Hydroxide = new Particle({1.0,0.0,0.0},{0.0,0.0,0.0}, "Hydroxide");
-  SAPHRON::Particle* sodium3 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Sodium");
+  SAPHRON::Particle* potassium2 = new Particle({200.0,0.0,0.0},{0.0,0.0,0.0}, "Potassium"); // this is for one of the -ve on polymer, see below
 
   sodium->SetCharge(1.67); // dereference the pointer and set the charge
-  sodium2->SetCharge(1.67);
-  sodium3->SetCharge(1.67);
+  potassium->SetCharge(1.67);
+  potassium2->SetCharge(1.67);
   Hydroxide->SetCharge(-1.67);
   chloride->SetCharge(-1.67);
 
@@ -187,19 +189,25 @@ int main(int narg, char **arg)
   {
     if(type[i/3] == 3)
     {
-      Particle* pnew = sodium->Clone();
+      Particle* pnew = potassium->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
     else if(type[i/3] == 4)
     {
-      Particle* pnew = chloride->Clone();
+      Particle* pnew = Hydroxide->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
     else if(type[i/3] == 5)
     {
-      Particle* pnew = Hydroxide->Clone();
+      Particle* pnew = sodium->Clone();
+      pnew->SetPosition({x[i],x[i+1],x[i+2]});
+      world.AddParticle(pnew);
+    }
+    else if(type[i/3] == 6)
+    {
+      Particle* pnew = chloride->Clone();
       pnew->SetPosition({x[i],x[i+1],x[i+2]});
       world.AddParticle(pnew);
     }
@@ -208,8 +216,9 @@ int main(int narg, char **arg)
   //Create world
   WorldManager WM;
   WM.AddWorld(&world);
-  world.SetChemicalPotential("Sodium", muNa);
+  world.SetChemicalPotential("Potassium", muK);
   world.SetChemicalPotential("Hydroxide", muOH);
+  world.SetChemicalPotential("Sodium", muNa);
   world.SetChemicalPotential("Chloride", muCl); // changed here
 
   //Create forcefields
@@ -235,16 +244,21 @@ int main(int narg, char **arg)
   ffm.AddNonBondedForceField("Chloride", "Sodium", lj2);
   ffm.AddNonBondedForceField("Sodium", "Sodium", lj2);
 
+  ffm.AddNonBondedForceField("Potassium", "Potassium", lj2);
+  ffm.AddNonBondedForceField("Potassium", "Chloride", lj2);
+  ffm.AddNonBondedForceField("Potassium", "Hydroxide", lj2);
+  ffm.AddNonBondedForceField("Potassium", "Sodium", lj2);
+  ffm.AddNonBondedForceField("Potassium", "Monomer", lj2);
+  ffm.AddNonBondedForceField("Potassium", "dMonomer", lj2);
+
   //Set up moves
   MoveManager MM (seed);
   //AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
-  InsertParticleMove Ins1({{"Sodium"}}, WM, 20, false,seed + 3);
-  InsertParticleMove Ins2({{"Hydroxide"}}, WM, 20, false,seed + 30);
-  InsertParticleMove Ins3({{"Chloride"}}, WM, 20, false,seed + 70);
+  InsertParticleMove Ins1({{"Sodium"}, {"Chloride"}}, WM, 20, true, seed + 3);
+  DeleteParticleMove Del1({{"Sodium"}, {"Chloride"}}, true, seed + 4);
 
-  DeleteParticleMove Del1({{"Sodium"}}, false, seed + 4);
-  DeleteParticleMove Del2({{"Hydroxide"}}, false, seed + 40);
-  DeleteParticleMove Del3({{"Chloride"}}, false, seed + 80);
+  InsertParticleMove Ins2({{"Potassium"}, {"Hydroxide"}}, WM, 20, true, seed + 9);
+  DeleteParticleMove Del2({{"Potassium"}, {"Hydroxide"}}, true, seed + 11);
   
   AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
   SpeciesSwapMove AnnMv({{"dMonomer"},{"Monomer"}},true, seed+6);
@@ -253,10 +267,8 @@ int main(int narg, char **arg)
   MM.AddMove(&AnnMv);
   MM.AddMove(&Ins1);
   MM.AddMove(&Ins2);
-  MM.AddMove(&Ins3);
   MM.AddMove(&Del1);
   MM.AddMove(&Del2);
-  MM.AddMove(&Del3);
   MM.AddMove(&AcidMv);
   //MM.AddMove(&AcidTitMv);
 
@@ -331,10 +343,10 @@ int main(int narg, char **arg)
     WriteDataFile(lmp, world, data_file, box, totalatoms);
     if (rank == 0)
       data_file.close();
-    WriteResults(lmp, Monomers, results_file, debye);
+    WriteResults(world, lmp, Monomers, results_file, debye);
     if (hit_detection_numb == 9)
     {
-    	WriteDump(lmp, Monomers, dump_file, debye, loop);
+    	//WriteDump(lmp, Monomers, dump_file, debye, loop);
     	hit_detection_numb = -1;
     }
 
@@ -408,7 +420,7 @@ void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, Worl
   }    
 }
 
-void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye)
+void WriteResults(World &world, LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye)
 {
   results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::app);
   int sumCharge = 0;
@@ -421,12 +433,17 @@ void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_fi
   double Rg_value = *((double*) lammps_extract_compute(lmp, "Rg_compute", 0, 0));
   double PE_value = *((double*) lammps_extract_compute(lmp, "myPE", 0, 0));
   double f_value = double(sumCharge)/double(Monomers.size());
+  const auto numK_saph = world.GetComposition()[1];
+  const auto numOH_saph = world.GetComposition()[2];
+  const auto numNa_saph = world.GetComposition()[3];
+  const auto numCl_saph = world.GetComposition()[4];
+
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if (rank == 0)
   {
-    results_file<<f_value<<" "<<Rg_value<<" "<<PE_value<<std::endl;
+    results_file<<f_value<<" "<<Rg_value<<" "<<PE_value<<"  "<<numK_saph<<"  "<<numOH_saph<<" "<<numNa_saph<<"  "<<numCl_saph<<std::endl;
     results_file.close();
   }
 }
