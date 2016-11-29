@@ -23,7 +23,9 @@
 #include "AcidTitrationMove.h"
 #include "AcidReactionMove.h"
 #include "WidomInsertionMove.h"
-
+#ifdef USING_LAMMPS
+#include "MDMove.h"
+#endif
 using namespace Json;
 
 namespace SAPHRON
@@ -185,6 +187,25 @@ namespace SAPHRON
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
+		#ifdef USING_LAMMPS
+		else if(type == "MD")
+		{
+			reader.parse(JsonSchema::MDMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto datafile = json.get("data_file","N/A").asString();
+			
+			auto* m = new MDMove(datafile);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
+		#endif
 		else if(type == "ParticleSwap")
 		{
 			reader.parse(JsonSchema::ParticleSwapMove, schema);

@@ -1,0 +1,15 @@
+{
+	"type" : "object",
+	"varname" : "MDMove",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["MD"]
+		},
+		"op_prefactor" : {
+			"type" : "boolean"
+		}
+	},
+	"required": ["type"],
+	"additionalProperties": false
+}

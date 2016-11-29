@@ -30,6 +30,10 @@ set(SAPHRON_MPI true CACHE BOOL "Enable MPI parallelization")
 set(SAPH_USE_LINAL false)
 SET(ARMA_PATHS "" CACHE STRING "Search directory for Armadillo")
 
+# Set default values for variables
+set(USE_LAMMPS NO CACHE BOOL "Use LAMMPS simulation engine.")
+### * USE_LAMMPS=YES USE_LAMMPS=NO
+
 # BEGIN - Identify linear algebra dependencies.
 include(FindArma)
 #include(FindQuadMath)
@@ -170,8 +174,17 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__bogus.h
 
 add_library(libsaphron ${SOURCE})
 set_target_properties(libsaphron PROPERTIES PREFIX "")
-target_link_libraries(libsaphron ${SAPH_LIBS})
-add_dependencies(libsaphron schema)
+if(USE_LAMMPS)
+	include_directories("/home/bsikora/Documents/Codes/LAMMPS/src")
+	target_link_libraries(libsaphron ${SAPH_LIBS} /home/bsikora/Documents/Codes/LAMMPS/src/liblammps.a)
+	set(USING_LAMMPS ON)
+	message(STATUS "")
+	message(STATUS "*** USE_LAMMPS = ${USE_LAMMPS}")
+	message(STATUS "")
+else()
+	target_link_libraries(libsaphron ${SAPH_LIBS})
+	add_dependencies(libsaphron schema)
+endif()
 
 add_executable(saphron 
 	src/main.cpp 

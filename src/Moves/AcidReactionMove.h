@@ -7,11 +7,6 @@
 #include "../ForceFields/ForceFieldManager.h"
 #include "../DensityOfStates/DOSOrderParameter.h"
 
-/* Currently move only works with acid where the following is the reaction:
-forward HA -> A- + H+
-Reverse A- + H+ -> HA
-*/
-
 namespace SAPHRON
 {
 	class AcidReactionMove : public Move
