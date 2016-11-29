@@ -34,7 +34,6 @@ namespace SAPHRON
 		//  WRITE THE LAMMPS DATA FILE
 		void WriteDataFile(const World &world, LAMMPS *lmp)
 		{
-
 			int rank;
 			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
