@@ -30,6 +30,7 @@ namespace SAPHRON
 		std::map<int, int> _S2L_map;
 		std::map<int, Particle*> _L2S_map;
 
+		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
 		{
 			int lammps_id = 1;
@@ -214,8 +215,10 @@ namespace SAPHRON
 		{
 			World* w = wm->GetRandomWorld();
 			
+			// matches id in spahron to lammps
 			UpdateMap(*w);
 			
+			// this writes lammps data file
 			WriteDataFile(*w);
 			
 			// Silence of the lammps.
@@ -227,7 +230,7 @@ namespace SAPHRON
 			sprintf(largs[2], "none");
 
 			_lmp = new LAMMPS(3, largs, _comm_lammps);
-			
+			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
 			{
 				ReadInputFile(_minimize_file);
@@ -237,7 +240,7 @@ namespace SAPHRON
 			{
 				ReadInputFile(_input_file);
 			}
-
+			// updates positoin in saphron
 			UpdateSAPHRON(*w);
 
 			delete _lmp;
