@@ -167,7 +167,6 @@ namespace SAPHRON
 				auto mu = w->GetChemicalPotential(id);
 				auto lambda = w->GetWavelength(id);
 
-				Prefactor*=V/(lambda*lambda*lambda*N)*exp(beta*mu);
 			
 				// Evaluate new energy for each particle. 
 				// Insert particle one at a time. Done this way
@@ -175,6 +174,8 @@ namespace SAPHRON
 				// Can be adjusted later if wated.
 
 				w->AddParticle(plist[i]);
+				Prefactor*=V/(lambda*lambda*lambda*(N))*exp(beta*mu);
+
 			}
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
