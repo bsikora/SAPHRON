@@ -4,12 +4,29 @@
 	"properties" : {
 		"type" : { 
 			"type" : "string",
-			"enum" : ["MD"]
+			"enum" : ["MolecularDynamics"]
+		},
+		"data_file" : {
+			"type" : "string"
+		},
+		"input_file" : {
+			"type" : "string"
+		},
+		"minimize_file" : {
+			"type" : "string"
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
 		},
 		"op_prefactor" : {
 			"type" : "boolean"
 		}
 	},
-	"required": ["type"],
+	"required": ["type", "data_file", "input_file"],
 	"additionalProperties": false
 }

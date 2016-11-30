@@ -9,6 +9,7 @@
 #cmakedefine PARALLEL_INTER
 #cmakedefine PARALLEL_INTRA
 #cmakedefine MULTI_WALKER
+#cmakedefine USING_LAMMPS
 
 #define GIT_SHA1 "@GIT_SHA1@"
 

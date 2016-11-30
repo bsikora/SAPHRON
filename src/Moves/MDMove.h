@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "Move.h"
+#include <map>
 #include "lammps.h"
 #include "input.h"
 #include "atom.h"
@@ -13,55 +14,196 @@
 
 using namespace LAMMPS_NS;
 
+// This move currently only supports **one** type of bond
 namespace SAPHRON
 {
 	class MDMove : public Move
 	{
 	private:
 
+		Rand _rand;
 		MPI_Comm _comm_lammps;
 		LAMMPS *_lmp;
-		int _performed;
-		int _rejected;
-		bool _prefac;
 		std::string _data_file;
+		std::string _input_file;
+		std::string _minimize_file;
+		std::map<int, int> _S2L_map;
+		std::map<int, Particle*> _L2S_map;
 
-		void ReadInputFile()
+		void UpdateMap(const World &world)
 		{
+			int lammps_id = 1;
+			for(auto& p : world)
+			{
+				if(p->HasChildren())
+					continue;
 
+				_S2L_map[p->GetGlobalIdentifier()] = lammps_id;
+				lammps_id++;
+			}
 		}
 
 		//  WRITE THE LAMMPS DATA FILE
-		void WriteDataFile(const World &world, LAMMPS *lmp)
+		void WriteDataFile(const World &world)
 		{
-			int rank;
-			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-			int natoms = static_cast<int> (lmp->atom->natoms);
-			int *image = new int[natoms];
-			int *image_all = new int[3*natoms];
-			int *type = new int[natoms];
-			lammps_gather_atoms(lmp, "image", 0, 1, image);
-			lammps_gather_atoms(lmp,"type", 0, 1, type);			
-
-			world.GetPrimitiveCount();
-			if(rank == 0)
+			
+			//Determine bonding
+			std::string bonding = "Bonds\n\n";
+			std::string coords = "Atoms\n\n";
+			NeighborList _bondedneighbors;
+			int bondnumber = 0;
+			int atomnumber = 0;
+			for(auto& p : world)
 			{
-				std::ofstream datafile;
-				datafile.open(_data_file,std::ofstream::out);
-				datafile<<"Testing 123"<<std::endl;
-				datafile.close();
+				if(p->HasChildren())
+					continue;
+
+				atomnumber++;
+				auto pid = _S2L_map[p->GetGlobalIdentifier()];
+				Position ppos = p->GetPosition();
+
+				_L2S_map[atomnumber] = p;
+
+				coords += std::to_string(pid) + " 1 " + 
+						std::to_string(p->GetSpeciesID() + 1) + " " +
+						std::to_string(p->GetCharge()) + " " +
+						std::to_string(ppos[0]) + " " +
+						std::to_string(ppos[1]) + " " +
+						std::to_string(ppos[2]) + " 0 0 0\n";
+
+				NeighborList bondedneighbors = p->GetBondedNeighbors();
+				if(bondedneighbors.size() == 0)
+					continue;
+
+				for(auto& bnp : bondedneighbors)
+				{
+					auto bnpid = _S2L_map[bnp->GetGlobalIdentifier()];
+					if(bnpid > pid)
+					{
+						bondnumber++;
+						bonding += std::to_string(bondnumber) + " 1 " + 
+						std::to_string(pid) + 
+						" " + std::to_string(bnpid) +"\n";
+					}
+				}
 			}
 
+			if(bondnumber == 0)
+				bonding = "";
+
+			std::ofstream datafile;
+			datafile.open(_data_file,std::ofstream::out);
+			
+			datafile<<"LAMMPS Testing file \n\n";
+			datafile<<std::to_string(atomnumber) + " atoms\n";
+			datafile<<std::to_string(bondnumber) + " bonds\n";
+			datafile<<"0 angles\n";
+			datafile<<"0 dihedrals\n";
+			datafile<<"0 impropers\n\n";
+
+			datafile<<std::to_string(world.GetComposition().size()) + " atom types\n";
+			datafile<<"1 bond types\n";
+			datafile<<"0 angle types\n";
+			datafile<<"0 dihedral types\n";
+			datafile<<"0 improper types\n\n";
+
+			auto& box = world.GetHMatrix();
+			datafile<<"0 "+std::to_string(box(0,0)) +" xlo xhi\n";
+			datafile<<"0 "+std::to_string(box(1,1)) +" ylo yhi\n";
+			datafile<<"0 "+std::to_string(box(2,2)) +" zlo zhi\n\n";
+
+			datafile<<"Masses\n\n";
+			for(int i = 0; i < world.GetComposition().size(); i++)
+				datafile<<std::to_string(i+1) + " 1.0\n";
+			datafile<<std::endl;
+			datafile<<coords;
+			datafile<<bonding;
+
+			datafile.close();
+		}
+
+		// Update SAPHRON from LAMMPS
+		void ReadInputFile(std::string file_to_read)
+		{
+			// open LAMMPS input script
+			FILE *fp;
+			int rank;
+			MPI_Comm_rank(_comm_lammps, &rank);
+			if (rank == 0)
+			{
+				fp = fopen(file_to_read.c_str(),"r");
+				if (fp == NULL)
+				{
+					throw std::logic_error("ERROR: Could not open LAMMPS input script " + file_to_read);
+				}
+			}
+
+			// Read lammps file line by line
+			int n;
+			char line[1024];
+			while (1) 
+			{
+				if (rank == 0) 
+				{
+					if (fgets(line,1024,fp) == NULL) n = 0;
+					else n = strlen(line) + 1;
+					if (n == 0) fclose(fp);
+				}
+
+				MPI_Bcast(&n,1,MPI_INT,0,_comm_lammps);
+				if (n == 0) break;
+					MPI_Bcast(line,n,MPI_CHAR,0,_comm_lammps);
+
+				std::string test = line;
+
+				size_t f = test.find("RANDOM");
+				if (f != std::string::npos)
+				{
+					test.replace(f, std::string("RANDOM").length(), std::to_string(int(_rand.int32()/1000)));
+					_lmp->input->one(test.c_str());
+				}
+				else
+				{
+					_lmp->input->one(line);
+				}
+			}
+		}
+
+		void UpdateSAPHRON(const World &world)
+		{
+			int natoms = static_cast<int> (_lmp->atom->natoms);
+
+			if(world.GetPrimitiveCount() != natoms)
+			{
+				throw std::runtime_error("N in LAMMPS does not match N in SAPHRON!");
+			}
+
+			double *x = new double[3*natoms];
+			int *image = new int[natoms];
+			lammps_gather_atoms(_lmp, "image", 0, 1, image);
+			auto& box = world.GetHMatrix();
+
+			lammps_gather_atoms(_lmp, "x", 1, 3, x);
+			Position pos;
+			for (int i = 0; i < natoms; i++)
+			{
+				pos[0] = x[i*3] + box(0,0)*((image[i] & IMGMASK) - IMGMAX);
+				pos[1] = x[i*3 + 1] + box(1,1)*((image[i] >> IMGBITS & IMGMASK) - IMGMAX);
+				pos[2] = x[i*3 + 2] + box(2,2)*((image[i] >> IMG2BITS) - IMGMAX);
+
+				_L2S_map[i+1]->SetPosition(pos);
+			}
+
+			delete [] x;
 			delete [] image;
-			delete [] image_all;
-			delete [] type;
 		}
 
 	public:
-		MDMove(std::string data_file) : 
-		_comm_lammps(), _lmp(), _performed(0), _rejected(0), _prefac(0),
-		_data_file(data_file)
+		MDMove(std::string data_file, std::string input_file, 
+				std::string minimize_file, unsigned seed = 2437) : 
+		_rand(seed), _comm_lammps(), _lmp(), _data_file(data_file), 
+		_input_file(input_file), _minimize_file(minimize_file),
+		_S2L_map(), _L2S_map()
 		{
 			MPI_Comm_split(MPI_COMM_WORLD, 1, 0, &_comm_lammps);
 		}
@@ -71,15 +213,34 @@ namespace SAPHRON
 					 const MoveOverride& override) override
 		{
 			World* w = wm->GetRandomWorld();
-			WriteDataFile(*w, _lmp);
+			
+			UpdateMap(*w);
+			
+			WriteDataFile(*w);
+			
+			// Silence of the lammps.
+			char **largs = (char**) malloc(sizeof(char*) * 3);
+			for(int i = 0; i < 3; ++i)
+				largs[i] = (char*) malloc(sizeof(char) * 1024);
+			sprintf(largs[0], " ");
+			sprintf(largs[1], "-screen");
+			sprintf(largs[2], "none");
 
-			//Write out data file
+			_lmp = new LAMMPS(3, largs, _comm_lammps);
+			
+			if(_minimize_file.compare("none") != 0)
+			{
+				ReadInputFile(_minimize_file);
+				_minimize_file = "none";
+			}
+			else
+			{
+				ReadInputFile(_input_file);
+			}
 
-			//Create new lammps instance
+			UpdateSAPHRON(*w);
 
-			//Read in input file and run
-
-			//Delete lammps instance
+			delete _lmp;
 		}
 
 		virtual void Perform(World*, 
@@ -92,17 +253,16 @@ namespace SAPHRON
 		}
 
 		// Turns on or off the acceptance rule prefactor for DOS order parameter.
-		void SetOrderParameterPrefactor(bool flag) { _prefac = flag; }
+		void SetOrderParameterPrefactor(bool flag) { }
 
 		virtual double GetAcceptanceRatio() const override
 		{
-			return 1.0-(double)_rejected/_performed;
+			return 1.0;
 		};
 
 		virtual void ResetAcceptanceRatio() override
 		{
-			_performed = 0;
-			_rejected = 0;
+
 		}
 
 		// Serialize.

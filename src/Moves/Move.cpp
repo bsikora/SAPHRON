@@ -188,7 +188,7 @@ namespace SAPHRON
 			move = static_cast<Move*>(m);
 		}
 		#ifdef USING_LAMMPS
-		else if(type == "MD")
+		else if(type == "MolecularDynamics")
 		{
 			reader.parse(JsonSchema::MDMove, schema);
 			validator.Parse(schema, path);
@@ -199,9 +199,11 @@ namespace SAPHRON
 				throw BuildException(validator.GetErrors());
 
 			auto prefac = json.get("op_prefactor", true).asBool();
-			auto datafile = json.get("data_file","N/A").asString();
-			
-			auto* m = new MDMove(datafile);
+			auto datafile = json.get("data_file","none").asString();
+			auto inputfile = json.get("input_file","none").asString();
+			auto minimizefile = json.get("minimize_file","none").asString();
+
+			auto* m = new MDMove(datafile, inputfile, minimizefile, seed);
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
