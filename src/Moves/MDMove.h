@@ -178,6 +178,7 @@ namespace SAPHRON
 
 			if(world.GetPrimitiveCount() != natoms)
 			{
+				std::cout<<"LAMMPS N = "<<natoms<<". SAPHRON N = "<<world.GetPrimitiveCount()<<std::endl;
 				throw std::runtime_error("N in LAMMPS does not match N in SAPHRON!");
 			}
 
