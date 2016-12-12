@@ -23,24 +23,29 @@
 			"type" : "integer",
 			"minimum" : 1
 		},
-		"saphron_ids": {
+		"mapping_ids": {
 			"type" : "array",
+			"varname" : "Mapping_IDs",
 			"items" : {
-				"type" : "integer"
+				"type" : "array",
+				"items" : [
+					{
+						"type" : "string"
+					},
+					{
+						"type" : "integer",
+						"minimum" : 1
+					}
+				],
+				"minItems" : 2,
+				"maxItems" : 2
 			},
-			"minimumItems" : 1
-		},
-		"lammps_ids": {
-			"type" : "array",
-			"items" : {
-				"type" : "integer"
-			},
-			"minimumItems" : 1
+			"minItems" : 1
 		},
 		"op_prefactor" : {
 			"type" : "boolean"
 		}
 	},
-	"required": ["type", "data_file", "input_file", "saphron_ids", "lammps_ids"],
+	"required": ["type", "data_file", "input_file", "mapping_ids"],
 	"additionalProperties": false
 }

@@ -28,7 +28,7 @@ namespace SAPHRON
 		std::string _input_file;
 		std::string _minimize_file;
 		std::map<int, int> _S2L_map;
-		std::map<int, int> _S2L_imap;
+		std::map<std::string, int> _S2L_imap;
 		std::map<int, Particle*> _L2S_map;
 
 		// matches spahron id to lammps ids
@@ -62,7 +62,7 @@ namespace SAPHRON
 
 				atomnumber++;
 				auto pid = _S2L_map[p->GetGlobalIdentifier()];
-				auto sid = _S2L_imap[p->GetSpeciesID()];
+				auto sid = _S2L_imap[p->GetSpecies()];
 				Position ppos = p->GetPosition();
 
 				_L2S_map[atomnumber] = p;
@@ -203,7 +203,7 @@ namespace SAPHRON
 
 	public:
 		MDMove(std::string data_file, std::string input_file, 
-				std::string minimize_file, std::vector<int> sids,
+				std::string minimize_file, std::vector<std::string> sids,
 				std::vector<int> lids, unsigned seed = 2437) : 
 		_rand(seed), _comm_lammps(), _lmp(), _data_file(data_file), 
 		_input_file(input_file), _minimize_file(minimize_file),
@@ -212,7 +212,7 @@ namespace SAPHRON
 			MPI_Comm_split(MPI_COMM_WORLD, 1, 0, &_comm_lammps);
 			if(sids.size() != lids.size())
 			{
-				std::cout<< "mapping SAPHRON ids size not same as LAMMPS size"<<std::endl;
+				std::cout<< "mapping SAPHRON ids size not same as LAMMPS size, this error shouldn't happen!"<<std::endl;
 				exit();
 			}
 
