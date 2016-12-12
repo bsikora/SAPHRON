@@ -213,7 +213,7 @@ namespace SAPHRON
 			if(sids.size() != lids.size())
 			{
 				std::cout<< "mapping SAPHRON ids size not same as LAMMPS size, this error shouldn't happen!"<<std::endl;
-				exit();
+				exit(1);
 			}
 
 			for(int i = 0; i < sids.size(); i++)

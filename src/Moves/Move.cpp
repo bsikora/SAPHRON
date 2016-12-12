@@ -203,7 +203,7 @@ namespace SAPHRON
 			auto inputfile = json.get("input_file","none").asString();
 			auto minimizefile = json.get("minimize_file","none").asString();
 			
-			std::vector<int> sidentities;
+			std::vector<std::string> sidentities;
 			std::vector<int> lidentities;
 
 			auto& mapping = json["mapping_ids"];
