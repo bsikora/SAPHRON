@@ -202,8 +202,16 @@ namespace SAPHRON
 			auto datafile = json.get("data_file","none").asString();
 			auto inputfile = json.get("input_file","none").asString();
 			auto minimizefile = json.get("minimize_file","none").asString();
+			
+			std::vector<int> sidentities;
+			for(auto& i : json["saphron_ids"])
+				sidentities.push_back(i.asInt());
 
-			auto* m = new MDMove(datafile, inputfile, minimizefile, seed);
+			std::vector<int> lidentities;
+			for(auto& i : json["lammps_ids"])
+				lidentities.push_back(i.asInt());
+
+			auto* m = new MDMove(datafile, inputfile, minimizefile, sidentities, lidentities, seed);
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}

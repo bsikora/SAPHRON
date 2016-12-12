@@ -28,6 +28,7 @@ namespace SAPHRON
 		std::string _input_file;
 		std::string _minimize_file;
 		std::map<int, int> _S2L_map;
+		std::map<int, int> _S2L_imap;
 		std::map<int, Particle*> _L2S_map;
 
 		// matches spahron id to lammps ids
@@ -61,12 +62,13 @@ namespace SAPHRON
 
 				atomnumber++;
 				auto pid = _S2L_map[p->GetGlobalIdentifier()];
+				auto sid = _S2L_imap[p->GetSpeciesID()];
 				Position ppos = p->GetPosition();
 
 				_L2S_map[atomnumber] = p;
 
 				coords += std::to_string(pid) + " 1 " + 
-						std::to_string(p->GetSpeciesID() + 1) + " " +
+						std::to_string(sid) + " " +
 						std::to_string(p->GetCharge()) + " " +
 						std::to_string(ppos[0]) + " " +
 						std::to_string(ppos[1]) + " " +
@@ -201,12 +203,22 @@ namespace SAPHRON
 
 	public:
 		MDMove(std::string data_file, std::string input_file, 
-				std::string minimize_file, unsigned seed = 2437) : 
+				std::string minimize_file, std::vector<int> sids,
+				std::vector<int> lids, unsigned seed = 2437) : 
 		_rand(seed), _comm_lammps(), _lmp(), _data_file(data_file), 
 		_input_file(input_file), _minimize_file(minimize_file),
-		_S2L_map(), _L2S_map()
+		_S2L_map(), _S2L_imap(), _L2S_map()
 		{
 			MPI_Comm_split(MPI_COMM_WORLD, 1, 0, &_comm_lammps);
+			if(sids.size() != lids.size())
+			{
+				std::cout<< "mapping SAPHRON ids size not same as LAMMPS size"<<std::endl;
+				exit();
+			}
+
+			for(int i = 0; i < sids.size(); i++)
+				_S2L_imap[sids[i]] = lids[i];
+
 		}
 
 		virtual void Perform(WorldManager* wm, 
