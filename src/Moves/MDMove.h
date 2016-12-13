@@ -56,23 +56,23 @@ namespace SAPHRON
 			}
 		}
 
-		void AnalyzeParticle(const Particle &p, std::string* coords, std::string bonding)
+		void AnalyzeParticle(Particle* p, std::string* coords, std::string bonding)
 		{
-			_L2S_map[_atomnumber] = *p;
+			_L2S_map[_atomnumber] = p;
 			_atomnumber++;
 
-			auto pid = _S2L_map[p.GetGlobalIdentifier()];
-			auto sid = _S2L_imap[p.GetSpecies()];
-			Position ppos = p.GetPosition();
+			auto pid = _S2L_map[p->GetGlobalIdentifier()];
+			auto sid = _S2L_imap[p->GetSpecies()];
+			Position ppos = p->GetPosition();
 
-			coords += std::to_string(pid) + " 1 " + 
+			&coords += std::to_string(pid) + " 1 " + 
 					std::to_string(sid) + " " +
-					std::to_string(p.GetCharge()) + " " +
+					std::to_string(p->GetCharge()) + " " +
 					std::to_string(ppos[0]) + " " +
 					std::to_string(ppos[1]) + " " +
 					std::to_string(ppos[2]) + " 0 0 0\n";
 
-			NeighborList bondedneighbors = p.GetBondedNeighbors();
+			NeighborList bondedneighbors = p->GetBondedNeighbors();
 			if(bondedneighbors.size() == 0)
 				return;
 
@@ -82,7 +82,7 @@ namespace SAPHRON
 				if(bnpid > pid)
 				{
 					_bondnumber++;
-					bonding += std::to_string(_bondnumber) + " 1 " + 
+					&bonding += std::to_string(_bondnumber) + " 1 " + 
 					std::to_string(pid) + 
 					" " + std::to_string(bnpid) +"\n";
 				}
