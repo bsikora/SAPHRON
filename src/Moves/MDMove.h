@@ -103,9 +103,9 @@ namespace SAPHRON
 			for(auto& p : world)
 				if(p->HasChildren())
 					for(auto& cp : *p)
-						AnalyzeParticle(cp, coords, bonding);
+						AnalyzeParticle(*cp, coords, bonding);
 				else
-					AnalyzeParticle(p, coords, bonding);
+					AnalyzeParticle(*p, coords, bonding);
 
 			if(bondnumber == 0)
 				bonding = "";
