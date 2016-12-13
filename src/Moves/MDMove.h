@@ -42,7 +42,7 @@ namespace SAPHRON
 			{
 				if(p->HasChildren())
 				{
-					for(auto& cp : p)
+					for(auto& cp : *p)
 					{
 						_S2L_map[cp->GetGlobalIdentifier()] = lammps_id;
 						lammps_id++;
@@ -102,7 +102,7 @@ namespace SAPHRON
 
 			for(auto& p : world)
 				if(p->HasChildren())
-					for(auto& cp : p)
+					for(auto& cp : *p)
 						AnalyzeParticle(cp, coords, bonding);
 				else
 					AnalyzeParticle(p, coords, bonding);
