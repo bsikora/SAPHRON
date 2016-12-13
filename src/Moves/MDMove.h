@@ -56,7 +56,7 @@ namespace SAPHRON
 			}
 		}
 
-		void AnalyzeParticle(Particle* p, std::string* coords, std::string bonding)
+		void AnalyzeParticle(Particle* p, std::string& coords, std::string& bonding)
 		{
 			_L2S_map[_atomnumber] = p;
 			_atomnumber++;
@@ -65,7 +65,7 @@ namespace SAPHRON
 			auto sid = _S2L_imap[p->GetSpecies()];
 			Position ppos = p->GetPosition();
 
-			&coords += std::to_string(pid) + " 1 " + 
+			coords += std::to_string(pid) + " 1 " + 
 					std::to_string(sid) + " " +
 					std::to_string(p->GetCharge()) + " " +
 					std::to_string(ppos[0]) + " " +
@@ -82,7 +82,7 @@ namespace SAPHRON
 				if(bnpid > pid)
 				{
 					_bondnumber++;
-					&bonding += std::to_string(_bondnumber) + " 1 " + 
+					bonding += std::to_string(_bondnumber) + " 1 " + 
 					std::to_string(pid) + 
 					" " + std::to_string(bnpid) +"\n";
 				}
