@@ -58,7 +58,7 @@ namespace SAPHRON
 
 		void AnalyzeParticle(const Particle &p, std::string* coords, std::string bonding)
 		{
-			_L2S_map[atomnumber] = p;
+			_L2S_map[_atomnumber] = p;
 			_atomnumber++;
 
 			auto pid = _S2L_map[p->GetGlobalIdentifier()];
@@ -81,8 +81,8 @@ namespace SAPHRON
 				auto bnpid = _S2L_map[bnp->GetGlobalIdentifier()];
 				if(bnpid > pid)
 				{
-					bondnumber++;
-					bonding += std::to_string(bondnumber) + " 1 " + 
+					_bondnumber++;
+					bonding += std::to_string(_bondnumber) + " 1 " + 
 					std::to_string(pid) + 
 					" " + std::to_string(bnpid) +"\n";
 				}
@@ -107,15 +107,15 @@ namespace SAPHRON
 				else
 					AnalyzeParticle(*p, coords, bonding);
 
-			if(bondnumber == 0)
+			if(_bondnumber == 0)
 				bonding = "";
 
 			std::ofstream datafile;
 			datafile.open(_data_file,std::ofstream::out);
 			
 			datafile<<"LAMMPS Testing file \n\n";
-			datafile<<std::to_string(atomnumber) + " atoms\n";
-			datafile<<std::to_string(bondnumber) + " bonds\n";
+			datafile<<std::to_string(_atomnumber) + " atoms\n";
+			datafile<<std::to_string(_bondnumber) + " bonds\n";
 			datafile<<"0 angles\n";
 			datafile<<"0 dihedrals\n";
 			datafile<<"0 impropers\n\n";
