@@ -260,7 +260,7 @@ int main(int narg, char **arg)
   InsertParticleMove Ins2({{"Potassium"}, {"Hydroxide"}}, WM, 20, true, seed + 9);
   DeleteParticleMove Del2({{"Potassium"}, {"Hydroxide"}}, true, seed + 11);
   
-  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu+muOH), seed + 5);
+  AcidReactionMove AcidMv({{"dMonomer"}, {"Monomer"}}, {{"Hydroxide"}}, WM, 20, -(mu-muOH), seed + 5);
   SpeciesSwapMove AnnMv({{"dMonomer"},{"Monomer"}},true, seed+6);
   //AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 

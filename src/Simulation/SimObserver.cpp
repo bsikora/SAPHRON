@@ -51,6 +51,7 @@ namespace SAPHRON
 		flags.hist_counts = json.get("hist_counts", 0).asUInt();
 		flags.particle_id = json.get("particle_id", 0).asUInt();
 		flags.particle_species = json.get("particle_species", 0).asUInt();
+		flags.particle_species_id = json.get("particle_species_id", 0).asUInt();
 		flags.particle_parent_id = json.get("particle_parent_id", 0).asUInt();
 		flags.particle_parent_species = json.get("particle_parent_species", 0).asUInt();
 		flags.particle_position = json.get("particle_position", 0).asUInt();

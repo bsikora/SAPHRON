@@ -230,8 +230,9 @@ namespace SAPHRON
 				
 				else if(ph==nullptr || p2==nullptr)
 				{
-					std::cout<<"Only Half of the products present! Exiting"<<std::endl;
-					exit(-1);
+					//std::cout<<"Only Half of the products present! Exiting"<<std::endl;
+					//exit(-1);
+					return;
 				}
 
 				bias = double(comp[_swap[1]])/(comp[_swap[0]]+comp[_swap[1]]);
@@ -301,7 +302,8 @@ namespace SAPHRON
 			auto& sim = SimInfo::Instance();
 
 			// Acceptance probability.
-			double pacc = Nratio*V*lambda3*lambdaratio*Korxn*bias*
+			// removed bias
+			double pacc = Nratio*V*lambda3*lambdaratio*Korxn*
 			exp((-de.energy.total())/(w->GetTemperature()*sim.GetkB()));
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 

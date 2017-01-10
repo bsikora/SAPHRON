@@ -182,7 +182,7 @@ int main(int narg, char **arg)
 
 // CREATE FORCEFIELDS
   ForceFieldManager ffm;
-  LennardJonesTSFF lj(1.0, 1.0, {2.5}); // Epsilon, sigma, cutoff
+  LennardJonesTSFF lj(0.3, 1.0, {2.5}); // Epsilon, sigma, cutoff, changed epsilon to 0.3 for good solvent
   FENEFF fene(0, 1.0, 7.0, 2.0); // epsilon, sigma, kspring, rmax
   DebyeHuckelFF debHuc(kappa, {coulcut});
   ffm.SetElectrostaticForcefield(debHuc);
@@ -208,9 +208,9 @@ int main(int narg, char **arg)
   // SET UP MOVES
   MoveManager MM (seed);
   AnnealChargeMove AnnMvA({{"PolymerA"}}, seed + 2);
-  AnnealChargeMove AnnMvB({{"PolymerB"}}, seed + 2);
+  AnnealChargeMove AnnMvB({{"PolymerB"}}, seed + 5);
   AcidTitrationMove AcidTitMvA({{"MonoA"}}, 1.67, mu, seed + 6);  //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
-  AcidTitrationMove AcidTitMvB({{"MonoB"}}, -1.67, -mu, seed + 6); // REPRESENTING POLYBASE
+  AcidTitrationMove AcidTitMvB({{"MonoB"}}, -1.67, mu, seed + 9); // REPRESENTING POLYBASE
 
   MM.AddMove(&AnnMvA);
   MM.AddMove(&AnnMvB);
@@ -363,7 +363,7 @@ void WriteResults(LAMMPS* lmp, ParticleList &MonomersA, ParticleList &MonomersB,
   }
   for(auto& p : MonomersB)
   {
-    if (p->GetCharge() < 0)
+    if (p->GetCharge() > 0)
       sumChargeB++;
   }
   double Rg_polyA_value = *((double*) lammps_extract_compute(lmp, "Rg_compute_A", 0, 0));

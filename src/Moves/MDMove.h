@@ -28,8 +28,18 @@ namespace SAPHRON
 		std::string _input_file;
 		std::string _minimize_file;
 		std::map<int, int> _S2L_map;
+
+		std::map<int, double> _S2L_vxmap; ///*****
+		std::map<int, double> _S2L_vymap; ///*****
+		std::map<int, double> _S2L_vzmap; ///*****
+
 		std::map<std::string, int> _S2L_imap;
 		std::map<int, Particle*> _L2S_map;
+
+		std::map<Particle*, double> _L2S_vxmap; ///*****
+		std::map<Particle*, double> _L2S_vymap; ///*****
+		std::map<Particle*, double> _L2S_vzmap; ///*****
+
 
 		int _bondnumber;
 		int _atomnumber;
@@ -45,24 +55,35 @@ namespace SAPHRON
 					for(auto& cp : *p)
 					{
 						_S2L_map[cp->GetGlobalIdentifier()] = lammps_id;
+						_S2L_vxmap[cp->GetGlobalIdentifier()] = _L2S_vxmap[cp]; ///*****
+						_S2L_vymap[cp->GetGlobalIdentifier()] = _L2S_vymap[cp]; ///*****
+						_S2L_vzmap[cp->GetGlobalIdentifier()] = _L2S_vzmap[cp]; ///*****
 						lammps_id++;
 					}
 				}
 				else
 				{
 					_S2L_map[p->GetGlobalIdentifier()] = lammps_id;
+					_S2L_vxmap[p->GetGlobalIdentifier()] = _L2S_vxmap[p]; ///*****
+					_S2L_vymap[p->GetGlobalIdentifier()] = _L2S_vymap[p]; ///*****
+					_S2L_vzmap[p->GetGlobalIdentifier()] = _L2S_vzmap[p]; ///*****
 					lammps_id++;
 				}
 			}
 		}
 
-		void AnalyzeParticle(Particle* p, std::string& coords, std::string& bonding)
+		void AnalyzeParticle(Particle* p, std::string& coords, std::string& bonding, std::string& velocities)
 		{
 			_L2S_map[_atomnumber] = p;
 			_atomnumber++;
 
 			auto pid = _S2L_map[p->GetGlobalIdentifier()];
 			auto sid = _S2L_imap[p->GetSpecies()];
+
+			auto vx = _S2L_vxmap[p->GetGlobalIdentifier()]; ///*****
+			auto vy = _S2L_vymap[p->GetGlobalIdentifier()]; ///*****
+			auto vz = _S2L_vzmap[p->GetGlobalIdentifier()]; ///*****
+
 			Position ppos = p->GetPosition();
 
 			coords += std::to_string(pid) + " 1 " + 
@@ -71,6 +92,11 @@ namespace SAPHRON
 					std::to_string(ppos[0]) + " " +
 					std::to_string(ppos[1]) + " " +
 					std::to_string(ppos[2]) + " 0 0 0\n";
+
+			velocities += std::to_string(pid) + " " + ///*****
+					std::to_string(vx) + " " + ///*****
+					std::to_string(vy) + " " + ///*****
+					std::to_string(vz) + "\n"; ///*****
 
 			NeighborList bondedneighbors = p->GetBondedNeighbors();
 			if(bondedneighbors.size() == 0)
@@ -96,6 +122,7 @@ namespace SAPHRON
 			//Determine bonding
 			std::string bonding = "Bonds\n\n";
 			std::string coords = "Atoms\n\n";
+			std::string velocities = "Velocities\n\n"; ///*****
 			
 			_bondnumber = 0;
 			_atomnumber = 0;
@@ -103,9 +130,9 @@ namespace SAPHRON
 			for(auto& p : world)
 				if(p->HasChildren())
 					for(auto& cp : *p)
-						AnalyzeParticle(cp, coords, bonding);
+						AnalyzeParticle(cp, coords, bonding, velocities); ///*****
 				else
-					AnalyzeParticle(p, coords, bonding);
+					AnalyzeParticle(p, coords, bonding, velocities); ///*****
 
 			if(_bondnumber == 0)
 				bonding = "";
@@ -136,6 +163,7 @@ namespace SAPHRON
 				datafile<<std::to_string(i+1) + " 1.0\n";
 			datafile<<std::endl;
 			datafile<<coords;
+			datafile<<velocities; ///*****
 			datafile<<bonding;
 
 			datafile.close();
@@ -199,11 +227,13 @@ namespace SAPHRON
 			}
 
 			double *x = new double[3*natoms];
+			double *v = new double[3*natoms];
 			int *image = new int[natoms];
 			lammps_gather_atoms(_lmp, "image", 0, 1, image);
 			auto& box = world.GetHMatrix();
 
 			lammps_gather_atoms(_lmp, "x", 1, 3, x);
+			lammps_gather_atoms(_lmp, "v", 1, 3, v);
 			Position pos;
 			for (int i = 0; i < natoms; i++)
 			{
@@ -212,9 +242,13 @@ namespace SAPHRON
 				pos[2] = x[i*3 + 2] + box(2,2)*((image[i] >> IMG2BITS) - IMGMAX);
 
 				_L2S_map[i]->SetPosition(pos);
+				_L2S_vxmap[_L2S_map[i]] = v[i*3]; ///***** could cause problem
+				_L2S_vymap[_L2S_map[i]] = v[i*3 + 1]; ///*****
+				_L2S_vzmap[_L2S_map[i]] = v[i*3 + 2]; ///*****
 			}
 
 			delete [] x;
+			delete [] v;
 			delete [] image;
 		}
 
@@ -246,7 +280,7 @@ namespace SAPHRON
 			
 			// matches id in spahron to lammps
 			UpdateMap(*w);
-			
+
 			// this writes lammps data file
 			WriteDataFile(*w);
 			

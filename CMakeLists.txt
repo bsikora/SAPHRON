@@ -98,7 +98,7 @@ set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/extern)
 # http://stackoverflow.com/questions/9689183/cmake-googletest
 ExternalProject_Add(
 	googletest
-	URL /home/bsikora/Downloads/googletest-release-1.6.0.zip
+	URL /afs/crc.nd.edu/user/v/vrathee/LAPHRON/SAPHRON/build/release-1.6.0.zip
 	# TIMEOUT 10
 	# # Force separate output paths for debug and release builds to allow easy
 	# # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
@@ -175,8 +175,8 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/__bogus.h
 add_library(libsaphron ${SOURCE})
 set_target_properties(libsaphron PROPERTIES PREFIX "")
 if(USE_LAMMPS)
-	include_directories("/home/bsikora/Documents/Codes/LAMMPS/src")
-	target_link_libraries(libsaphron ${SAPH_LIBS} /home/bsikora/Documents/Codes/LAMMPS/src/liblammps.a)
+	include_directories("/afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src")
+	target_link_libraries(libsaphron ${SAPH_LIBS} /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
 	set(USING_LAMMPS ON)
 	message(STATUS "")
 	message(STATUS "*** USE_LAMMPS = ${USE_LAMMPS}")
@@ -237,14 +237,49 @@ set(TEST_DEPS
 	libsaphron)
 
 add_executable(LAPHRON LAPHRON/main.cpp)
-target_link_libraries(LAPHRON ${SAPH_LIBS} libsaphron /home/bsikora/Documents/Codes/LAMMPS/src/liblammps.a)
-target_include_directories(LAPHRON PRIVATE /home/bsikora/Documents/Codes/LAMMPS/src ${MPI_CXX_INCLUDE_PATH})
+target_link_libraries(LAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(LAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
 add_dependencies(LAPHRON libsaphron)
 
 add_executable(RLAPHRON LAPHRON/main_rxn.cpp)
-target_link_libraries(RLAPHRON ${SAPH_LIBS} libsaphron /home/bsikora/Documents/Codes/LAMMPS/src/liblammps.a)
-target_include_directories(RLAPHRON PRIVATE /home/bsikora/Documents/Codes/LAMMPS/src ${MPI_CXX_INCLUDE_PATH})
+target_link_libraries(RLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(RLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
 add_dependencies(RLAPHRON libsaphron)
+
+add_executable(WLAPHRON LAPHRON/main_widom.cpp)
+target_link_libraries(WLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(WLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(WLAPHRON libsaphron)
+
+add_executable(GLAPHRON LAPHRON/main_gcmc.cpp)
+target_link_libraries(GLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(GLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(GLAPHRON libsaphron)
+
+add_executable(GSiLAPHRON LAPHRON/main_single_gcmc.cpp)
+target_link_libraries(GSiLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(GSiLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(GSiLAPHRON libsaphron)
+
+add_executable(DLAPHRON LAPHRON/main_double_polymer.cpp)
+target_link_libraries(DLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(DLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(DLAPHRON libsaphron)
+
+add_executable(NaclGLAPHRON LAPHRON/main_nacl_gcmc.cpp)
+target_link_libraries(NaclGLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(NaclGLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(NaclGLAPHRON libsaphron)
+
+add_executable(monoLAPHRON LAPHRON/main_monomers_only.cpp)
+target_link_libraries(monoLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(monoLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(monoLAPHRON libsaphron)
+
+add_executable(fillgcmcLAPHRON LAPHRON/main_gcmc_fill_box.cpp)
+target_link_libraries(fillgcmcLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
+target_include_directories(fillgcmcLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
+add_dependencies(fillgcmcLAPHRON libsaphron)
 
 add_executable(ConstraintTests test/ConstraintTests.cpp)
 target_link_libraries(ConstraintTests ${TEST_DEPS})

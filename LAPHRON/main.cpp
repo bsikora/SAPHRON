@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <fstream>
 #include <chrono>
@@ -43,7 +44,7 @@ LAMMPS* Equlibration(std::string lammpsfile, MPI_Comm& lammps_comm);
 void setSaphronBondedNeighbors(ParticleList &Monomers);
 void ReadInputFile(std::string lammpsfile, MPI_Comm& comm_lammps, LAMMPS* lmp, int& xrand);
 void SAPHRONLoop(MoveManager &MM, WorldManager &WM, ForceFieldManager &ffm, World &world);
-void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& data_file);
+void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& data_file, double &box);
 void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_file, double &debye);
 void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, double &debye, int &loop);
 
@@ -68,6 +69,11 @@ int main(int narg, char **arg)
   double coulcut = (1.0/kappa)*5.0;
   double mu = atof(arg[5]);
   double debye = atof(arg[6]);
+  double box = atof(arg[7]);
+  if (coulcut > (box/2))
+  {
+    coulcut = box/2;
+  }
 
   std::ofstream dump_file;
   dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::out);
@@ -75,7 +81,7 @@ int main(int narg, char **arg)
   dump_file.close();
   std::ofstream results_file;
   results_file.open("debyeLen_" + std::to_string(debye)+"_results.dat", std::ofstream::out);
-  results_file<<"f   Rg   Potential_Energy"<<std::endl;
+  results_file<<"f     Rg     Potential_Energy    Total Energy"<<std::endl;
   results_file.close();
   std::ifstream datatrial("data.trial", std::ios::binary);
   std::ofstream dtfile("data."+lammpsfile, std::ios::binary);
@@ -101,9 +107,7 @@ int main(int narg, char **arg)
 
   int natoms = static_cast<int> (lmp->atom->natoms);
   double *x = new double[3*natoms];
-  double *q = new double[natoms];
   lammps_gather_atoms(lmp, "x", 1, 3, x);
-  lammps_gather_atoms(lmp, "q", 1, 1, q);
   
   /////////////////SETUP SAPHRON//////////////////////////////////////////////////////////////////////
   ParticleList Monomers;
@@ -113,8 +117,8 @@ int main(int narg, char **arg)
     Monomers.push_back(new Particle({x[i],x[i+1],x[i+2]},{0.0,0.0,0.0}, "Monomer"));
 
   // Set charges on the monomers
-  for(int i=0; i<Monomers.size(); i++)
-    Monomers[i]->SetCharge(q[i]);
+  for(auto& m : Monomers)
+    m->SetCharge(0.0);
 
   /*for(int i=1; i < natoms-1; i++)
   {
@@ -153,29 +157,39 @@ int main(int narg, char **arg)
 
   //Create world
   WorldManager WM;
-  double rcut = 300.0;
-  World world(1000.0, 1000.0, 1000.0, rcut, seed + 1); // same as lammps input data file
+  World world(box, box, box, coulcut, seed + 1);
   world.SetTemperature(1.0);
   WM.AddWorld(&world);
   world.AddParticle(&poly);
 
   //Set up moves
+  bool mu_is_positive = mu > 0;
+  bool mu_is_negative = mu < 0;
+  double charge_to_put = 0.0;
+
+  if (mu_is_positive == true)
+    charge_to_put = -1.67;
+  if (mu_is_negative == true)
+    charge_to_put = 1.67;
+
   MoveManager MM (seed);
   AnnealChargeMove AnnMv({{"Polymer"}}, seed + 2);
-  //InsertParticleMove Ins({{"Monomer"}}, WM,20,false,seed + 3);
-  //DeleteParticleMove Del({{"Monomer"}},false, seed + 4);
-  //AcidReactionMove AcidMv({{"Monomer"}}, {{"temp"}},WM,20,10, seed + 5);
-  AcidTitrationMove AcidTitMv({{"Monomer"}}, 1.67, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
+  AcidTitrationMove AcidTitMv({{"Monomer"}}, charge_to_put, mu, seed + 6);    //bjerrum length 2.8sigma (e*sqrt(2.8) == 1.67)
 
   MM.AddMove(&AnnMv);
-  //MM.AddMove(&Ins);
-  //MM.AddMove(&Del);
-  //MM.AddMove(&AcidMv);
   MM.AddMove(&AcidTitMv);
+
+  std::ofstream data_file;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if (rank == 0)
+    data_file.open("data."+lammpsfile, std::ofstream::out);
+  WriteDataFile(lmp, Monomers, data_file, box);
+  if (rank == 0)
+    data_file.close();
 
   delete lmp;
   delete [] x;
-  delete [] q;
 
   //Make sure all threads are caught up to this point.
   MPI_Barrier(MPI_COMM_WORLD);
@@ -187,6 +201,7 @@ int main(int narg, char **arg)
   {
     lmp = new LAMMPS(0, NULL, comm_lammps);
     ReadInputFile(lammpsfile, comm_lammps, lmp, xrand);
+    natoms = static_cast<int> (lmp->atom->natoms);
     double *x = new double[3*natoms];
     lammps_gather_atoms(lmp,"x",1,3,x);
 
@@ -202,7 +217,7 @@ int main(int narg, char **arg)
     {
       std::ofstream data_file;
       data_file.open("data."+lammpsfile, std::ofstream::out);
-      WriteDataFile(lmp, Monomers, data_file);
+      WriteDataFile(lmp, Monomers, data_file, box);
       data_file.close();
       WriteResults(lmp, Monomers, results_file, debye);
       if (hit_detection_numb == 9)
@@ -288,28 +303,31 @@ void WriteResults(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& results_fi
   int sumCharge = 0;
   for(auto& p : Monomers)
   {
-    if (p->GetCharge() < 0)
+    if ((p->GetCharge() < 0) || (p->GetCharge() > 0))
       sumCharge++;
   }
 
   double Rg_value = *((double*) lammps_extract_compute(lmp, "Rg_compute", 0, 0));
   double PE_value = *((double*) lammps_extract_compute(lmp, "myPE", 0, 0));
+  double KE_value = *((double*) lammps_extract_compute(lmp, "myKE", 0, 0));
+  cout<<"GOT UNTIL HERE"<<endl;
+  double Total_E_value = PE_value + KE_value;
   double f_value = double(sumCharge)/double(Monomers.size());
 
-  results_file<<f_value<<" "<<Rg_value<<" "<<PE_value<<std::endl;
+  results_file<<setprecision(3)<<fixed<<f_value<<"     "<<Rg_value<<"     "<<PE_value<<"     "<<Total_E_value<<std::endl;
   results_file.close();
 }
 
 //  WRITE THE LAMMPS DATA FILE
-void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
+void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs, double &box)
 {
 
   int natoms = static_cast<int> (lmp->atom->natoms);
-  double *vel = new double[3*natoms]; 
+  //double *vel = new double[3*natoms]; 
   int *image = new int[natoms];
   int *image_all = new int[3*natoms];
   lammps_gather_atoms(lmp, "image", 0, 1, image);
-  lammps_gather_atoms(lmp, "v", 1, 3, vel);
+  //lammps_gather_atoms(lmp, "v", 1, 3, vel);
 
   for (int i = 0; i < natoms; i++)
   {
@@ -377,7 +395,7 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
       continue;
     }
 
-    std::string vstr = "Velocities";
+    /*std::string vstr = "Velocities";
     if (s2.std::string::find(vstr) != std::string::npos)
     {
       ofs<<"Velocities"<<std::endl;
@@ -399,7 +417,7 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
         ofs<<std::endl;
       }
       continue;
-    }
+    }*/
     
     std::string s5 = "Bonds";
     if (s2.std::string::find(s5) != std::string::npos)
@@ -412,27 +430,30 @@ void WriteDataFile(LAMMPS* lmp, ParticleList &atoms, std::ofstream& ofs)
     std::string s6 = "xlo";
     if (s2.std::string::find(s6) != std::string::npos)
     {
-      ofs<<"       0.0 1000.0 xlo xhi"<<std::endl;
+      ofs<<"       0.0 "<< box <<" xlo xhi"<<std::endl;
       continue;
     }
 
     std::string s7 = "ylo";
     if (s2.std::string::find(s7) != std::string::npos)
     {
-      ofs<<"       0.0 1000.0 ylo yhi"<<std::endl;
+      ofs<<"       0.0 "<< box <<" ylo yhi"<<std::endl;
       continue;
     }
 
     std::string s8 = "zlo";
     if (s2.std::string::find(s8) != std::string::npos)
     {
-      ofs<<"       0.0 1000.0 zlo zhi"<<std::endl;
+      ofs<<"       0.0 "<< box <<" zlo zhi"<<std::endl;
       continue;
     }
 
     ofs<<iss.str()<<std::endl;
   }
   ofs.close();
+  delete [] image;
+  delete [] image_all;
+  //delete [] vel;
 }
 
 void setSaphronBondedNeighbors(ParticleList &Monomers)
@@ -502,7 +523,7 @@ void WriteDump(LAMMPS* lmp, ParticleList &Monomers, std::ofstream& dump_file, do
 
   int MDstep = loop*1000;
   dump_file.open("dump_debyeLen_" + std::to_string(debye)+"_.dat", std::ofstream::app);
-  dump_file<<"The MD step is: "<<MDstep<<std::endl;
+  dump_file<<"%%################!!!!!!The MD step is: "<<MDstep<<" ################!!!!!!!!!!"<<std::endl;
   for(int i = 0; i < Monomers.size(); i++)
   {
     dump_file<<i+1<<" "<<Monomers[i]->GetSpeciesID()<<" "<<Monomers[i]->GetCharge()<<" ";
