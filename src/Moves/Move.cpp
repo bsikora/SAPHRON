@@ -72,7 +72,7 @@ namespace SAPHRON
 			for(auto& s : json["products"])
 				products.push_back(s.asString());
 
-			auto pKo = json.get("pKo", 0.0).asDouble();
+			auto pKo = json.get("mu", 0.0).asDouble();
 			auto scount = json["stash_count"].asInt();
 
 			auto prefac = json.get("op_prefactor", true).asBool();
