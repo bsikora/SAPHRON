@@ -340,7 +340,24 @@ namespace SAPHRON
 				w->IncrementEnergy(de.energy);
 				w->IncrementPressure(de.pressure);
 			}
-			
+
+			std::cout << " PACC IS " << pacc <<std::endl;
+			std::cout << " rxndirection is " << rxndirection <<std::endl;
+			std::cout << " RxnExtent is " << RxnExtent <<std::endl;
+			std::cout << " lambda ratio is " << lambdaratio <<std::endl;		
+			std::cout << " total energy is  " << de.energy.total() <<std::endl;
+			std::cout << " Nratio is " << Nratio <<std::endl;
+			std::cout << " Korxn is  " << Korxn <<std::endl;
+			std::cout << " swap[0] is " << _swap[0] <<std::endl;
+			std::cout << " swap[1] is " << _swap[1] <<std::endl;
+			std::cout << " products[0] is " << _products[0] <<std::endl;
+			std::cout << " comp1 is " << comp1 <<std::endl;
+			std::cout << " comp2 is " << comp2 <<std::endl;
+			std::cout << " compph is " << compph <<std::endl;
+			std::cout << " ******************** " << compph <<std::endl;
+			std::cout << " ******************** " << compph <<std::endl;
+
+
 		}
 
 		virtual void Perform(World*, 
