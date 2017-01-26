@@ -206,7 +206,7 @@ namespace SAPHRON
 				size_t f = test.find("RANDOM");
 				if (f != std::string::npos)
 				{
-					test.replace(f, std::string("RANDOM").length(), std::to_string(int(_rand.int32()/1000)));
+					test.replace(f, std::string("RANDOM").length(), std::to_string(int(_rand.int32()/1000 + 1)));///*****
 					_lmp->input->one(test.c_str());
 				}
 				else
