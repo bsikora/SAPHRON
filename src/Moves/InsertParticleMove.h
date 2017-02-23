@@ -107,6 +107,11 @@ namespace SAPHRON
 							 ForceFieldManager* ffm, 
 							 const MoveOverride& override) override
 		{
+			auto store = 0; //*********
+			auto store_mu = 0; //*********
+			auto store_lambda = 0; //*********
+			auto store_N = 0; //*********
+
 			// Get random world.
 			World* w = wm->GetRandomWorld();
 
@@ -167,6 +172,9 @@ namespace SAPHRON
 				auto mu = w->GetChemicalPotential(id);
 				auto lambda = w->GetWavelength(id);
 
+				store_lambda = lambda; //*********
+				store_mu = mu; //*********
+				store_N = N; //*********
 			
 				// Evaluate new energy for each particle. 
 				// Insert particle one at a time. Done this way
@@ -174,7 +182,8 @@ namespace SAPHRON
 				// Can be adjusted later if wated.
 
 				w->AddParticle(plist[i]);
-				Prefactor*=V/(lambda*lambda*lambda*(N))*exp(beta*mu);
+				Prefactor*=V/(lambda*lambda*lambda*(N+1))*exp(beta*mu);
+				store = i; //*********
 
 			}
 
@@ -194,7 +203,7 @@ namespace SAPHRON
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.8.
 			// However,t iwas modified since we are using the *final* particle number.
-			auto pacc = Prefactor*exp(-beta*ef.energy.total());;
+			auto pacc = Prefactor*exp(-beta*ef.energy.total());
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
@@ -210,6 +219,17 @@ namespace SAPHRON
 				// Update energies and pressures.
 				w->IncrementEnergy(ef.energy);
 				w->IncrementPressure(ef.pressure);
+				std::cout << " THIS IS INSERT MOVE "<<std::endl; //*********
+				std::cout << " PACC IS: " << pacc <<std::endl;		//*********
+				std::cout << " total energy is:  " << ef.energy.total() <<std::endl; //*********
+				std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl; //*********
+				std::cout << " Prefactor: " << Prefactor <<std::endl; //*********
+				std::cout << " Volume: " << V <<std::endl; //*********
+				std::cout << " lambda: " << store_lambda <<std::endl; //*********
+				std::cout << " mu: " << store_mu <<std::endl; //*********
+				std::cout << " N: " << store_N <<std::endl; //*********
+				std::cout << " ******************** "<<std::endl; //*********
+				std::cout << "                       "<<std::endl; //*********
 			}
 		}
 
