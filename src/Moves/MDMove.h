@@ -11,6 +11,8 @@
 #include "../Worlds/WorldManager.h"
 #include "../ForceFields/ForceFieldManager.h"
 #include "../DensityOfStates/DOSOrderParameter.h"
+#include <iomanip>
+#include <stdio.h>
 
 using namespace LAMMPS_NS;
 
@@ -43,6 +45,8 @@ namespace SAPHRON
 
 		int _bondnumber;
 		int _atomnumber;
+		double _wallspace_y = 0.5; ///*****
+		double _wallspace_z = 0.5; ///*****
 
 		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
@@ -85,6 +89,10 @@ namespace SAPHRON
 			auto vz = _S2L_vzmap[p->GetGlobalIdentifier()]; ///*****
 
 			Position ppos = p->GetPosition();
+
+			/*auto& H = p->GetWorld()->GetHMatrix(); 
+			if(ppos[0] >= H(0,0) || ppos[1] >= H(1,1) || ppos[2] >= H(2,2))
+				std::cerr << "Error with particle " << p->GetGlobalIdentifier() << " " << ppos << std::endl;*/
 
 			coords += std::to_string(pid) + " 1 " + 
 					std::to_string(sid) + " " +
@@ -154,9 +162,13 @@ namespace SAPHRON
 			datafile<<"0 improper types\n\n";
 
 			auto& box = world.GetHMatrix();
+			/*datafile<<"0 "+std::to_string(box(0,0)) +" xlo xhi\n";
+			datafile<<"0 "+std::to_string(box(1,1)) +" ylo yhi\n";  ///*****previous 700
+			datafile<<"0 "+std::to_string(box(2,2)) +" zlo zhi\n\n";*/
+
 			datafile<<"0 "+std::to_string(box(0,0)) +" xlo xhi\n";
-			datafile<<"0 "+std::to_string(box(1,1)) +" ylo yhi\n";
-			datafile<<"0 "+std::to_string(box(2,2)) +" zlo zhi\n\n";
+			datafile<<std::to_string(-_wallspace_y)+" "+std::to_string(box(1,1)+_wallspace_y) +" ylo yhi\n";  ///*****
+			datafile<<std::to_string(-_wallspace_z)+" "+std::to_string(box(2,2)+_wallspace_z) +" zlo zhi\n\n"; ///*****
 
 			datafile<<"Masses\n\n";
 			for(int i = 0; i < world.GetComposition().size(); i++)
@@ -238,8 +250,14 @@ namespace SAPHRON
 			for (int i = 0; i < natoms; i++)
 			{
 				pos[0] = x[i*3] + box(0,0)*((image[i] & IMGMASK) - IMGMAX);
-				pos[1] = x[i*3 + 1] + box(1,1)*((image[i] >> IMGBITS & IMGMASK) - IMGMAX);
-				pos[2] = x[i*3 + 2] + box(2,2)*((image[i] >> IMG2BITS) - IMGMAX);
+				pos[1] = x[i*3 + 1] + (box(1,1)+2*_wallspace_y)*((image[i] >> IMGBITS & IMGMASK) - IMGMAX); ///*****
+				pos[2] = x[i*3 + 2] + (box(2,2)+2*_wallspace_z)*((image[i] >> IMG2BITS) - IMGMAX); ///*****
+
+				/*
+				std::cerr << "position from lammps x " << x[i*3] << " " << std::endl;      ///*****
+				std::cerr << "position from lammps y " << x[i*3 + 1] << " " << std::endl;  ///*****
+				std::cerr << "position from lammps z " << x[i*3 + 2] << " " << std::endl; ///*****
+				*/
 
 				_L2S_map[i]->SetPosition(pos);
 				_L2S_vxmap[_L2S_map[i]] = v[i*3]; ///***** could cause problem
@@ -247,10 +265,43 @@ namespace SAPHRON
 				_L2S_vzmap[_L2S_map[i]] = v[i*3 + 2]; ///*****
 			}
 
+	///*****// NOTE THIS METHOD IS BUILT FOR SINGLE POLYMER IN THE SYSTEM ONLY, FOR DOUBLE POLYMER FURTHER CHANGES WOULD BE REQUIRED
+			// PRINTING OUT RG AND CHARGE FRAC VALUES
+
+			int sumCharge = 0;
+			int num_monomers = 0;
+			for(auto& p : world)
+				if(p->HasChildren())
+				{
+					num_monomers = 0;
+					sumCharge = 0;
+					for(auto& cp : *p)
+					{
+						num_monomers++;
+					    if ((cp->GetCharge() < 0) || (cp->GetCharge() > 0))
+      						sumCharge++;
+      				}
+  				}
+
+		  	double f_value = double(sumCharge)/double(num_monomers);
+			double Rg_value = *((double*) lammps_extract_compute(_lmp, "Rg_compute", 0, 0));
+			double PE_value = *((double*) lammps_extract_compute(_lmp, "myPE", 0, 0));
+			double KE_value = *((double*) lammps_extract_compute(_lmp, "myKE", 0, 0));
+			double Total_E_value = PE_value + KE_value;
+
+			std::ofstream Rgchgfracfile;
+			Rgchgfracfile.open("Rg_chg_frac_"+_input_file,std::ofstream::app);
+		  	Rgchgfracfile<<std::setprecision(4)<<std::fixed<<std::to_string(f_value)<<"     "<<std::to_string(Rg_value)<<
+		  	"     "<<std::to_string(PE_value)<<"     "<<std::to_string(Total_E_value)<<"     "<<std::to_string(num_monomers)<<
+		  	"     "<<std::to_string(sumCharge)<<std::endl;
+		  	Rgchgfracfile.close();
+  	///*****
+
 			delete [] x;
 			delete [] v;
 			delete [] image;
 		}
+
 
 	public:
 		MDMove(std::string data_file, std::string input_file, 
@@ -269,6 +320,9 @@ namespace SAPHRON
 
 			for(int i = 0; i < sids.size(); i++)
 				_S2L_imap[sids[i]] = lids[i];
+
+			// REMOVING THE RG_CHARGE_FRACTION FILE AT THE BEGINNING OF THE RUN
+			remove(("Rg_chg_frac_"+_input_file).c_str()); ///*****
 
 		}
 
@@ -290,9 +344,10 @@ namespace SAPHRON
 				largs[i] = (char*) malloc(sizeof(char) * 1024);
 			sprintf(largs[0], " ");
 			sprintf(largs[1], "-screen");
-			sprintf(largs[2], "none");
+			sprintf(largs[2], "none");  ///*****
 
-			_lmp = new LAMMPS(3, largs, _comm_lammps);
+			_lmp = new LAMMPS(0, NULL, _comm_lammps);  ///***** before 3 instead of 0
+			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
 			{
