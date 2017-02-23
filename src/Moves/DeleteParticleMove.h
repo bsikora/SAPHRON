@@ -67,6 +67,8 @@ namespace SAPHRON
 							 ForceFieldManager* ffm, 
 							 const MoveOverride& override) override
 		{
+			auto store = 0; //*********
+
 			// Get random world.
 			World* w = wm->GetRandomWorld();
 
@@ -131,7 +133,9 @@ namespace SAPHRON
 					ei -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
+			{
 				w->RemoveParticle(plist[i]);
+			}
 
 			// Evaluate current tail energy and add diff to energy.
 			auto wef = ffm->EvaluateTailEnergy(*w);
@@ -155,11 +159,21 @@ namespace SAPHRON
 			{
 				// Stash the particle which actually removes it from the world. 
 				for (unsigned int i = 0; i < NumberofParticles; i++)
+				{
 					w->StashParticle(plist[i]);
+					store = i; //*********
+				}
 
 				// Update energies and pressures.
 				w->IncrementEnergy(-1.0*ei.energy);
 				w->IncrementPressure(-1.0*ei.pressure);
+				std::cout << " THIS IS DELETE MOVE "<<std::endl; //*********
+				std::cout << " PACC IS " << pacc <<std::endl;		//*********
+				std::cout << " total energy is  " << ei.energy.total() <<std::endl; //*********
+				std::cout << " id " << plist[store]->GetSpeciesID() <<std::endl; //*********
+				std::cout << " Prefactor " << Prefactor <<std::endl; //*********
+				std::cout << " ******************** "<<std::endl; //*********
+				std::cout << "                       "<<std::endl; //*********
 			}
 		}
 
