@@ -35,6 +35,10 @@ namespace SAPHRON
 		std::map<int, double> _S2L_vymap; ///*****
 		std::map<int, double> _S2L_vzmap; ///*****
 
+		std::map<int, int> _S2L_ixmap; ///*****
+		std::map<int, int> _S2L_iymap; ///*****
+		std::map<int, int> _S2L_izmap; ///*****
+
 		std::map<std::string, int> _S2L_imap;
 		std::map<int, Particle*> _L2S_map;
 
@@ -42,11 +46,14 @@ namespace SAPHRON
 		std::map<Particle*, double> _L2S_vymap; ///*****
 		std::map<Particle*, double> _L2S_vzmap; ///*****
 
+		std::map<Particle*, int> _L2S_ixmap; ///*****
+		std::map<Particle*, int> _L2S_iymap; ///*****
+		std::map<Particle*, int> _L2S_izmap; ///*****		
 
 		int _bondnumber;
 		int _atomnumber;
-		double _wallspace_y = 0.5; ///*****
-		double _wallspace_z = 0.5; ///*****
+		double _wallspace_y = 0.001; ///*****
+		double _wallspace_z = 0.001; ///*****
 
 		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
@@ -62,6 +69,11 @@ namespace SAPHRON
 						_S2L_vxmap[cp->GetGlobalIdentifier()] = _L2S_vxmap[cp]; ///*****
 						_S2L_vymap[cp->GetGlobalIdentifier()] = _L2S_vymap[cp]; ///*****
 						_S2L_vzmap[cp->GetGlobalIdentifier()] = _L2S_vzmap[cp]; ///*****
+
+						_S2L_ixmap[cp->GetGlobalIdentifier()] = _L2S_ixmap[cp]; ///*****
+						_S2L_iymap[cp->GetGlobalIdentifier()] = _L2S_iymap[cp]; ///*****
+						_S2L_izmap[cp->GetGlobalIdentifier()] = _L2S_izmap[cp]; ///*****
+
 						lammps_id++;
 					}
 				}
@@ -71,6 +83,11 @@ namespace SAPHRON
 					_S2L_vxmap[p->GetGlobalIdentifier()] = _L2S_vxmap[p]; ///*****
 					_S2L_vymap[p->GetGlobalIdentifier()] = _L2S_vymap[p]; ///*****
 					_S2L_vzmap[p->GetGlobalIdentifier()] = _L2S_vzmap[p]; ///*****
+
+					_S2L_ixmap[p->GetGlobalIdentifier()] = _L2S_ixmap[p]; ///*****
+					_S2L_iymap[p->GetGlobalIdentifier()] = _L2S_iymap[p]; ///*****
+					_S2L_izmap[p->GetGlobalIdentifier()] = _L2S_izmap[p]; ///*****
+
 					lammps_id++;
 				}
 			}
@@ -88,6 +105,10 @@ namespace SAPHRON
 			auto vy = _S2L_vymap[p->GetGlobalIdentifier()]; ///*****
 			auto vz = _S2L_vzmap[p->GetGlobalIdentifier()]; ///*****
 
+			auto ix = _S2L_ixmap[p->GetGlobalIdentifier()]; ///*****
+			auto iy = _S2L_iymap[p->GetGlobalIdentifier()]; ///*****
+			auto iz = _S2L_izmap[p->GetGlobalIdentifier()]; ///*****
+
 			Position ppos = p->GetPosition();
 
 			/*auto& H = p->GetWorld()->GetHMatrix(); 
@@ -99,7 +120,8 @@ namespace SAPHRON
 					std::to_string(p->GetCharge()) + " " +
 					std::to_string(ppos[0]) + " " +
 					std::to_string(ppos[1]) + " " +
-					std::to_string(ppos[2]) + " 0 0 0\n";
+					std::to_string(ppos[2]) + " " + 
+					std::to_string(ix) + " " + std::to_string(iy) + " " + std::to_string(iz) + "\n";
 
 			velocities += std::to_string(pid) + " " + ///*****
 					std::to_string(vx) + " " + ///*****
@@ -249,9 +271,14 @@ namespace SAPHRON
 			Position pos;
 			for (int i = 0; i < natoms; i++)
 			{
+				/*
 				pos[0] = x[i*3] + box(0,0)*((image[i] & IMGMASK) - IMGMAX);
 				pos[1] = x[i*3 + 1] + (box(1,1)+2*_wallspace_y)*((image[i] >> IMGBITS & IMGMASK) - IMGMAX); ///*****
 				pos[2] = x[i*3 + 2] + (box(2,2)+2*_wallspace_z)*((image[i] >> IMG2BITS) - IMGMAX); ///*****
+				*/
+				pos[0] = x[i*3];
+				pos[1] = x[i*3 + 1]; ///*****
+				pos[2] = x[i*3 + 2]; ///*****
 
 				/*
 				std::cerr << "position from lammps x " << x[i*3] << " " << std::endl;      ///*****
@@ -263,6 +290,10 @@ namespace SAPHRON
 				_L2S_vxmap[_L2S_map[i]] = v[i*3]; ///***** could cause problem
 				_L2S_vymap[_L2S_map[i]] = v[i*3 + 1]; ///*****
 				_L2S_vzmap[_L2S_map[i]] = v[i*3 + 2]; ///*****
+
+				_L2S_ixmap[_L2S_map[i]] = ((image[i] & IMGMASK) - IMGMAX); ///***** could cause problem
+				_L2S_iymap[_L2S_map[i]] = ((image[i] >> IMGBITS & IMGMASK) - IMGMAX); ///*****
+				_L2S_izmap[_L2S_map[i]] = ((image[i] >> IMG2BITS) - IMGMAX); ///*****
 			}
 
 	///*****// NOTE THIS METHOD IS BUILT FOR SINGLE POLYMER IN THE SYSTEM ONLY, FOR DOUBLE POLYMER FURTHER CHANGES WOULD BE REQUIRED
