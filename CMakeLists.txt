@@ -98,7 +98,9 @@ set_directory_properties(PROPERTIES EP_PREFIX ${CMAKE_BINARY_DIR}/extern)
 # http://stackoverflow.com/questions/9689183/cmake-googletest
 ExternalProject_Add(
 	googletest
-	URL /afs/crc.nd.edu/user/v/vrathee/LAPHRON/SAPHRON/build/release-1.6.0.zip
+	DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+	GIT_REPOSITORY https://github.com/google/googletest.git
+	GIT_TAG 800f542
 	# TIMEOUT 10
 	# # Force separate output paths for debug and release builds to allow easy
 	# # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
@@ -135,7 +137,7 @@ message(STATUS "")
 
 include_directories("${PROJECT_SOURCE_DIR}/src")
 include_directories("${PROJECT_SOURCE_DIR}/include")
-include_directories("${ARMA_INCLUDE}")
+include_directories("${ARMA_INCLUDES}")
 
 set(SOURCE
 	src/Constraints/Constraint.cpp
@@ -271,15 +273,6 @@ target_link_libraries(NaclGLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/
 target_include_directories(NaclGLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
 add_dependencies(NaclGLAPHRON libsaphron)
 
-add_executable(monoLAPHRON LAPHRON/main_monomers_only.cpp)
-target_link_libraries(monoLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
-target_include_directories(monoLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
-add_dependencies(monoLAPHRON libsaphron)
-
-add_executable(fillgcmcLAPHRON LAPHRON/main_gcmc_fill_box.cpp)
-target_link_libraries(fillgcmcLAPHRON ${SAPH_LIBS} libsaphron /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src/liblammps.a)
-target_include_directories(fillgcmcLAPHRON PRIVATE /afs/crc.nd.edu/user/v/vrathee/lammps-30Jul16/src ${MPI_CXX_INCLUDE_PATH})
-add_dependencies(fillgcmcLAPHRON libsaphron)
 
 add_executable(ConstraintTests test/ConstraintTests.cpp)
 target_link_libraries(ConstraintTests ${TEST_DEPS})
@@ -556,6 +549,12 @@ target_link_libraries(WorldManagerTests ${TEST_DEPS})
 target_include_directories(WorldManagerTests PRIVATE "${GTEST_INCLUDE_DIR}")
 add_dependencies(WorldManagerTests googletest) 
 add_test(WorldManagerTests WorldManagerTests)
+
+add_executable(EwaldFFTests test/EwaldFFTests.cpp)
+target_link_libraries(EwaldFFTests ${TEST_DEPS})
+target_include_directories(EwaldFFTests PRIVATE "${GTEST_INCLUDE_DIR}")
+add_dependencies(EwaldFFTests googletest) 
+add_test(EwaldFFTests EwaldFFTests)
 
 
 # end add testing 

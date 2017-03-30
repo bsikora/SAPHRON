@@ -21,6 +21,7 @@ namespace SAPHRON
 		static std::string Histogram;
 		static std::string Simulation;
 		static std::string DOSSimulation;
+		static std::string EwaldFF;
 		static std::string ModLennardJonesTSFF;
 		static std::string LennardJonesTSFF;
 		static std::string LennardJonesFF;
