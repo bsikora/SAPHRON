@@ -257,14 +257,16 @@ namespace SAPHRON
 			{
 				Nratio = comp2*compph/(comp1 + 1.0);
 				Korxn = exp(_mu);
-				ei = ffm->EvaluateEnergy(*ph);
+				//**ei = ffm->EvaluateEnergy(*ph);
+				ei = ffm->EvaluateEnergy(*w);
 				w->RemoveParticle(ph);
-				ei += ffm->EvaluateEnergy(*p2);
+				//**ei += ffm->EvaluateEnergy(*p2);
 				p2->SetCharge(_c1);
 				p2->SetMass(_m1);
 				p2->SetSpeciesID(_i1);
 
-				ef = ffm->EvaluateEnergy(*p2);
+				//**ef = ffm->EvaluateEnergy(*p2);
+				ef = ffm->EvaluateEnergy(*w);
 				lambdaratio = pow(_m1/_m2,3.0/2.0);
 			}
 
@@ -273,13 +275,14 @@ namespace SAPHRON
 				Nratio = comp1/((comp2+1.0)*(compph+1.0));
 				Korxn = exp(-_mu);
 
-				ei = ffm->EvaluateEnergy(*p1);
-				
+				//**ei = ffm->EvaluateEnergy(*p1);
+				ei = ffm->EvaluateEnergy(*w);
+
 				p1->SetCharge(_c2);
 				p1->SetMass(_m2);
 				p1->SetSpeciesID(_i2);
 				
-				ef = ffm->EvaluateEnergy(*p1);
+				//**ef = ffm->EvaluateEnergy(*p1);
 				
 				ph = w->UnstashParticle(_products[0]);
 				// Generate a random position and orientation for particle insertion.
@@ -290,7 +293,9 @@ namespace SAPHRON
 
 				// Insert particle.
 				w->AddParticle(ph);
-				ef += ffm->EvaluateEnergy(*ph);
+				//**ef += ffm->EvaluateEnergy(*ph);
+				ef = ffm->EvaluateEnergy(*w);
+
 				lambdaratio = pow(_m2/_m1,3.0/2.0);
 			}
 

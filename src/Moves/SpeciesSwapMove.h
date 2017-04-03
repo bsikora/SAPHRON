@@ -132,13 +132,15 @@ namespace SAPHRON
 			}
 
 			// TODO: FFM is known to double count energies of two particles that are neighbors.
-			auto ei = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
-
+			//auto ei = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
+			auto ei = ffm->EvaluateEnergy(*w);
 			// Increment pulled out since function is called for undo later on.
 			Perform(p1, p2);
 			++_performed;
 
-			auto ef = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
+			auto ef = ffm->EvaluateEnergy(*w);
+
+			//auto ef = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
 			Energy de = ef.energy - ei.energy;
 
 			// Get sim info for kB.

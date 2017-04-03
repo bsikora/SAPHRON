@@ -139,9 +139,8 @@ namespace SAPHRON
 			auto beta = 1.0/(sim.GetkB()*w->GetTemperature());
 			auto V = w->GetVolume();
 			auto& comp = w->GetComposition();
-			EPTuple ef;
 
-			// Get previous tail energy and pressure.
+			// Get previous energy and pressure.
 			auto wei = w->GetEnergy();
 			auto wpi = w->GetPressure();
 
@@ -187,22 +186,25 @@ namespace SAPHRON
 
 			}
 
-			for (unsigned int i = 0; i < NumberofParticles; i++)
-				ef += ffm->EvaluateEnergy(*plist[i]);
+			//for (unsigned int i = 0; i < NumberofParticles; i++)
+				//ef += ffm->EvaluateEnergy(*plist[i]);
+			auto ef = ffm->EvaluateEnergy(*w);
 
-			for (unsigned int i = 0; i < NumberofParticles-1; i++)
-				for (unsigned int j = i+1; j < NumberofParticles; j++)
-					ef -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
+			//for (unsigned int i = 0; i < NumberofParticles-1; i++)
+			//	for (unsigned int j = i+1; j < NumberofParticles; j++)
+			//		ef -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
 
 			// Evaluate current tail energy and add diff to energy.
-			auto wef = ffm->EvaluateTailEnergy(*w);
-			ef.energy.tail = wef.energy.tail - wei.tail;
-			ef.pressure.ptail = wef.pressure.ptail - wpi.ptail;
+			//auto wef = ffm->EvaluateTailEnergy(*w);
+			//ef.energy.tail = wef.energy.tail - wei.tail;
+			//ef.pressure.ptail = wef.pressure.ptail - wpi.ptail;
 
 			++_performed;
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.8.
 			// However,t iwas modified since we are using the *final* particle number.
+			ef.energy -= wei; 
+			ef.pressure -= wpi;
 			auto pacc = Prefactor*exp(-beta*ef.energy.total());
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
@@ -304,7 +306,8 @@ namespace SAPHRON
 				// Can be adjusted later if wated.
 
 				w->AddParticle(plist[i]);
-				ef += ffm->EvaluateEnergy(*plist[i]);
+				//ef += ffm->EvaluateEnergy(*plist[i]);
+				ef += ffm->EvaluateEnergy(*w);
 			}
 
 			++_performed;

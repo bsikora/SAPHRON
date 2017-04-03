@@ -107,7 +107,7 @@ namespace SAPHRON
 			auto& sim = SimInfo::Instance();
 			auto beta = 1.0/(sim.GetkB()*w->GetTemperature());
 			auto V = w->GetVolume();
-			EPTuple ei;
+			//EPTuple ei;
 			auto& comp = w->GetComposition();
 			
 			// Get previous tail energy and pressure.
@@ -125,24 +125,28 @@ namespace SAPHRON
 				Prefactor*=(lambda*lambda*lambda*N)/V*exp(-beta*mu);
 
 				// Evaluate old energy.
-				ei += ffm->EvaluateEnergy(*plist[i]);
+				//ei += ffm->EvaluateEnergy(*plist[i]);
 			}
 
-			for (unsigned int i = 0; i < NumberofParticles-1; i++)
-				for (unsigned int j = i+1; j < NumberofParticles; j++)
-					ei -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
+			//for (unsigned int i = 0; i < NumberofParticles-1; i++)
+			//	for (unsigned int j = i+1; j < NumberofParticles; j++)
+			//		ei -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 			{
 				w->RemoveParticle(plist[i]);
 			}
+			auto ei = ffm->EvaluateEnergy(*w);
 
 			// Evaluate current tail energy and add diff to energy.
-			auto wef = ffm->EvaluateTailEnergy(*w);
-			ei.energy.tail = wei.tail - wef.energy.tail;
-			ei.pressure.ptail = wpi.ptail - wef.pressure.ptail;
+			//auto wef = ffm->EvaluateTailEnergy(*w);
+			//ei.energy.tail = wei.tail - wef.energy.tail;
+			//ei.pressure.ptail = wpi.ptail - wef.pressure.ptail;
 
 			++_performed;
+
+			ei.energy -= wei; 
+			ei.pressure -= wpi;
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.9.
 			auto pacc = Prefactor*exp(beta*ei.energy.total());
@@ -165,8 +169,10 @@ namespace SAPHRON
 				}
 
 				// Update energies and pressures.
-				w->IncrementEnergy(-1.0*ei.energy);
-				w->IncrementPressure(-1.0*ei.pressure);
+				//w->IncrementEnergy(-1.0*ei.energy);
+				//w->IncrementPressure(-1.0*ei.pressure);
+				w->IncrementEnergy(ei.energy);
+				w->IncrementPressure(ei.pressure);
 				std::cout << " THIS IS DELETE MOVE "<<std::endl; //*********
 				std::cout << " PACC IS " << pacc <<std::endl;		//*********
 				std::cout << " total energy is  " << ei.energy.total() <<std::endl; //*********

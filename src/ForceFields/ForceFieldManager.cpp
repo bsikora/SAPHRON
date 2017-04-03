@@ -259,7 +259,7 @@ namespace SAPHRON
 		if(_nonbondedforcefields.empty())
 			return EPTuple();
 
-		double intere = 0, electroe = 0, pxx = 0, pxy = 0, pxz = 0, pyy = 0, pyz = 0, pzz = 0;
+		double intere = 0, electroe = 0, pxx = 0, pxy = 0, pxz = 0, pyy = 0, pyz = 0, pzz = 0, recipro = 0;
 
 		// Get appropriate world and ID.
 		World* world = particle.GetWorld();
@@ -320,7 +320,7 @@ namespace SAPHRON
 			pyz += totalvirial * 0.5 * (rij[1] * rab[2] + rij[2] * rab[1]);				
 		}
 
-		EPTuple ep{intere, 0, electroe, 0, 0, 0, 0, 0, 0, -pxx, -pxy, -pxz, -pyy, -pyz, -pzz, 0};				
+		EPTuple ep{intere, 0, electroe, 0, 0, 0, 0, 0, recipro, 0, -pxx, -pxy, -pxz, -pyy, -pyz, -pzz, 0};				
 		
 		for(auto& child : particle)
 			ep += EvaluateInterEnergy(*child);	
