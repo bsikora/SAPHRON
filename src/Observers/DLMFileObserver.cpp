@@ -148,6 +148,8 @@ namespace SAPHRON
 				WriteStream(*_worldfs.back(), "E Constraint");
 			if(this->Flags.etail)
 				WriteStream(*_worldfs.back(), "E tail");
+			if(this->Flags.etailelect)
+				WriteStream(*_worldfs.back(), "E Electro Tail");
 			if(this->Flags.world_chem_pot)
 			{
 				const auto& species = Particle::GetSpeciesList(); 
@@ -390,6 +392,8 @@ namespace SAPHRON
 				WriteStream(*fs, E.constraint);
 			if(this->Flags.etail)
 				WriteStream(*fs, E.tail);
+			if(this->Flags.etailelect)
+				WriteStream(*fs, E.electrotail);
 			if(this->Flags.world_chem_pot)
 			{
 				int st = w->GetComposition().size();

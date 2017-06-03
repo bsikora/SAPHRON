@@ -35,6 +35,7 @@ namespace SAPHRON
 		flags.eintraelect = json.get("energy_intraelect", 0).asUInt();
 		flags.ebonded = json.get("energy_bonded", 0).asUInt();
 		flags.econnectivity = json.get("energy_connectivity", 0).asUInt();
+		flags.etailelect = json.get("energy_tailelect", 0).asUInt();
 		flags.pideal = json.get("pressure_ideal", 0).asUInt();
 		flags.pxx = json.get("pressure_pxx", 0).asUInt();
 		flags.pxy = json.get("pressure_pxy", 0).asUInt();

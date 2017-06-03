@@ -70,6 +70,7 @@ namespace SAPHRON
 					unsigned int econnectivity: 1;
 					unsigned int econstraint : 1;
 					unsigned int etail : 1;
+					unsigned int etailelect: 1;
 				};
 				unsigned int energy_components;
 			};
@@ -158,6 +159,7 @@ namespace SAPHRON
 					if(econnectivity) json["energy_connectivity"] = 1;
 					if(econstraint) json["energy_constraint"] = 1;
 					if(etail) json["energy_tail"] = 1;
+					if(etailelect) json["energy_tailelect"] = 1;
 				}
 
 				if(pressure_tensor == pressure_mask)

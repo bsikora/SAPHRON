@@ -52,8 +52,9 @@ namespace SAPHRON
 
 		int _bondnumber;
 		int _atomnumber;
-		double _wallspace_y = 0.001; ///*****
-		double _wallspace_z = 0.001; ///*****
+		double _wallspace_y = 0.00001; ///*****
+		double _wallspace_z = 0.00001; ///*****
+		int _perma_mark = 0; ///*****
 
 		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
@@ -215,7 +216,7 @@ namespace SAPHRON
 				fp = fopen(file_to_read.c_str(),"r");
 				if (fp == NULL)
 				{
-					throw std::logic_error("ERROR: Could not open LAMMPS input script " + file_to_read);
+					throw std::logic_error("ERROR: Could not open LAMMPS input scripts " + file_to_read);
 				}
 			}
 
@@ -298,7 +299,32 @@ namespace SAPHRON
 
 	///*****// NOTE THIS METHOD IS BUILT FOR SINGLE POLYMER IN THE SYSTEM ONLY, FOR DOUBLE POLYMER FURTHER CHANGES WOULD BE REQUIRED
 			// PRINTING OUT RG AND CHARGE FRAC VALUES
+			if (_perma_mark == 0)
+			{
+				for (auto& p : world)
+				{
+					if(p->HasChildren())
+					{
+						for(auto& cp : *p)
+						{
+							//std::cout<< "species ID is"<< cp->GetSpecies()<<std::endl;
+						    if ((cp->GetSpecies().compare("Monomer2") == 0) || (cp->GetSpecies().compare("dMonomer2") == 0))
+						    {
+	      						_perma_mark = 2;
+	      						break;
+	  						}else{
+	  							_perma_mark = 1;
+	  						}
+	      				}
+	  				}
+				}
+			}
+			//std::cout<< "perma_mark is"<< _perma_mark<<std::endl;
 
+			if (_perma_mark == 1)
+			{
+				/* code */
+			
 			int sumCharge = 0;
 			int num_monomers = 0;
 			for(auto& p : world)
@@ -326,6 +352,59 @@ namespace SAPHRON
 		  	"     "<<std::to_string(PE_value)<<"     "<<std::to_string(Total_E_value)<<"     "<<std::to_string(num_monomers)<<
 		  	"     "<<std::to_string(sumCharge)<<std::endl;
 		  	Rgchgfracfile.close();
+		  }
+
+			if (_perma_mark == 2)
+			{
+				/* code */
+			
+			int sumCharge_1 = 0;
+			int sumCharge_2 = 0;
+			int num_monomers_1 = 0;
+			int num_monomers_2 = 0;
+			int _count = 0;
+			for(auto& p : world)
+			{
+				if(p->HasChildren())
+				{
+					for(auto& cp : *p)
+					{
+						if ((cp->GetSpecies().compare("Monomer2") == 0) || (cp->GetSpecies().compare("dMonomer2") == 0))
+							num_monomers_2++;
+						if ((cp->GetSpecies().compare("Monomer") == 0) || (cp->GetSpecies().compare("dMonomer") == 0))
+							num_monomers_1++;
+					    if ((cp->GetSpecies().compare("dMonomer2") == 0) || (cp->GetCharge() > 0))
+      						sumCharge_2++;
+					    if ((cp->GetSpecies().compare("dMonomer") == 0) || (cp->GetCharge() < 0))
+      						sumCharge_1++;
+      				}
+  				}
+  				_count++;
+  			}
+
+		  	double f_value_mono_1 = double(sumCharge_1)/double(num_monomers_1);
+		  	double f_value_mono_2 = double(sumCharge_2)/double(num_monomers_2);
+			double Rg_value_mono_1 = *((double*) lammps_extract_compute(_lmp, "Rg_compute_1", 0, 0));
+			double Rg_value_mono_2 = *((double*) lammps_extract_compute(_lmp, "Rg_compute_2", 0, 0));
+			double PE_value = *((double*) lammps_extract_compute(_lmp, "myPE", 0, 0));
+			double KE_value = *((double*) lammps_extract_compute(_lmp, "myKE", 0, 0));
+			double Total_E_value = PE_value + KE_value;
+
+			std::ofstream Rgchgfracfile;
+			Rgchgfracfile.open("Rg_chg_frac_"+_input_file,std::ofstream::app);
+		  	Rgchgfracfile<<std::setprecision(4)<<std::fixed<<
+		  	std::to_string(f_value_mono_1)<<
+		  	"     "<<std::to_string(Rg_value_mono_1)<<
+		  	"     "<<std::to_string(f_value_mono_2)<<
+		  	"     "<<std::to_string(Rg_value_mono_2)<<
+		  	"     "<<std::to_string(PE_value)<<
+		  	"     "<<std::to_string(Total_E_value)<<
+		  	"     "<<std::to_string(num_monomers_1)<<
+		  	"     "<<std::to_string(num_monomers_2)<<
+		  	"     "<<std::to_string(sumCharge_1)<<
+		  	"     "<<std::to_string(sumCharge_2)<<std::endl;
+		  	Rgchgfracfile.close();
+		  }
   	///*****
 
 			delete [] x;
@@ -377,7 +456,8 @@ namespace SAPHRON
 			sprintf(largs[1], "-screen");
 			sprintf(largs[2], "none");  ///*****
 
-			_lmp = new LAMMPS(0, NULL, _comm_lammps);  ///***** before 3 instead of 0
+             ///replace 0 with 3 and NULL with largs to suppress lammps output
+			_lmp = new LAMMPS(3, largs, _comm_lammps);  
 			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)

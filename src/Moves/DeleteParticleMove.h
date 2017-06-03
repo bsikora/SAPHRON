@@ -173,13 +173,13 @@ namespace SAPHRON
 				//w->IncrementPressure(-1.0*ei.pressure);
 				w->IncrementEnergy(ei.energy);
 				w->IncrementPressure(ei.pressure);
-				std::cout << " THIS IS DELETE MOVE "<<std::endl; //*********
-				std::cout << " PACC IS " << pacc <<std::endl;		//*********
-				std::cout << " total energy is  " << ei.energy.total() <<std::endl; //*********
-				std::cout << " id " << plist[store]->GetSpeciesID() <<std::endl; //*********
-				std::cout << " Prefactor " << Prefactor <<std::endl; //*********
-				std::cout << " ******************** "<<std::endl; //*********
-				std::cout << "                       "<<std::endl; //*********
+				//std::cout << " THIS IS DELETE MOVE "<<std::endl; //*********
+				//std::cout << " PACC IS " << pacc <<std::endl;		//*********
+				//std::cout << " total energy is  " << ei.energy.total() <<std::endl; //*********
+				//std::cout << " id " << plist[store]->GetSpeciesID() <<std::endl; //*********
+				//std::cout << " Prefactor " << Prefactor <<std::endl; //*********
+				//std::cout << " ******************** "<<std::endl; //*********
+				//std::cout << "                       "<<std::endl; //*********
 			}
 		}
 

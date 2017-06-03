@@ -221,17 +221,17 @@ namespace SAPHRON
 				// Update energies and pressures.
 				w->IncrementEnergy(ef.energy);
 				w->IncrementPressure(ef.pressure);
-				std::cout << " THIS IS INSERT MOVE "<<std::endl; //*********
-				std::cout << " PACC IS: " << pacc <<std::endl;		//*********
-				std::cout << " total energy is:  " << ef.energy.total() <<std::endl; //*********
-				std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl; //*********
-				std::cout << " Prefactor: " << Prefactor <<std::endl; //*********
-				std::cout << " Volume: " << V <<std::endl; //*********
-				std::cout << " lambda: " << store_lambda <<std::endl; //*********
-				std::cout << " mu: " << store_mu <<std::endl; //*********
-				std::cout << " N: " << store_N <<std::endl; //*********
-				std::cout << " ******************** "<<std::endl; //*********
-				std::cout << "                       "<<std::endl; //*********
+				//std::cout << " THIS IS INSERT MOVE "<<std::endl; //*********
+				//std::cout << " PACC IS: " << pacc <<std::endl;		//*********
+				//std::cout << " total energy is:  " << ef.energy.total() <<std::endl; //*********
+				//std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl; //*********
+				//std::cout << " Prefactor: " << Prefactor <<std::endl; //*********
+				//std::cout << " Volume: " << V <<std::endl; //*********
+				//std::cout << " lambda: " << store_lambda <<std::endl; //*********
+				//std::cout << " mu: " << store_mu <<std::endl; //*********
+				//std::cout << " N: " << store_N <<std::endl; //*********
+				//std::cout << " ******************** "<<std::endl; //*********
+				//std::cout << "                       "<<std::endl; //*********
 			}
 		}
 

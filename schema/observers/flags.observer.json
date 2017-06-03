@@ -131,6 +131,11 @@
 			"minimum" : 0,
 			"maximum" : 1
 		},
+		"energy_tailelect" : {
+			"type" : "integer", 
+			"minimum" : 0, 
+			"maximum" : 1
+		},
 		"pressure_ideal" : {
 			"type" : "integer", 
 			"minimum" : 0,
