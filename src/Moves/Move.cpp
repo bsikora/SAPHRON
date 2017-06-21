@@ -23,6 +23,7 @@
 #include "AcidTitrationMove.h"
 #include "AcidReactionMove.h"
 #include "WidomInsertionMove.h"
+#include "RegionInsertParticleMove.h"
 #ifdef USING_LAMMPS
 #include "MDMove.h"
 #endif
@@ -184,6 +185,37 @@ namespace SAPHRON
 				species.push_back(s.asString());
 
 			auto* m = new InsertParticleMove(species, *wm, scount, multi_i, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
+		else if(type == "RegionInsertParticle")
+		{
+			reader.parse(JsonSchema::RegionInsertParticleMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto scount = json["stash_count"].asInt();
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto multi_i = json.get("multi_insertion", false).asBool(); 
+
+			std::vector<std::string> species;
+			for(auto& s : json["species"])
+				species.push_back(s.asString());
+
+			auto x_low = json.get("xlo", 0.0).asDouble();
+			auto x_high = json.get("xhi", 0.0).asDouble();
+
+			auto y_low = json.get("ylo", 0.0).asDouble();
+			auto y_high = json.get("yhi", 0.0).asDouble();
+
+			auto z_low = json.get("zlo", 0.0).asDouble();
+			auto z_high = json.get("zhi", 0.0).asDouble();
+
+			auto* m = new RegionInsertParticleMove(species, *wm, scount, multi_i, x_low, y_low, z_low, x_high, y_high, z_high, seed);
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}

@@ -47,6 +47,7 @@ namespace SAPHRON
 		static std::string Observers;
 		static std::string JSONObserver;
 		static std::string DLMFileObserver;
+		static std::string RegionInsertParticleMove;
 		static std::string MDMove;
 		static std::string WidomInsertionMove;
 		static std::string VolumeSwapMove;

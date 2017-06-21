@@ -457,7 +457,7 @@ namespace SAPHRON
 			sprintf(largs[2], "none");  ///*****
 
              ///replace 0 with 3 and NULL with largs to suppress lammps output
-			_lmp = new LAMMPS(0, NULL, _comm_lammps);  
+			_lmp = new LAMMPS(3, largs, _comm_lammps);  
 			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
