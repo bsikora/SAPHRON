@@ -5,6 +5,7 @@
 #include "../Utils/Rand.h"
 #include "../Worlds/WorldManager.h"
 #include "../ForceFields/ForceFieldManager.h"
+#include "../ForceFields/LennardJonesTSFF.h"
 #include "../DensityOfStates/DOSOrderParameter.h"
 
 namespace SAPHRON
@@ -113,15 +114,75 @@ namespace SAPHRON
 			InitStashParticles(wm);
 		}
 
+
+
+		/*********************************WALL ENERGY CALCULATION **************************/
+		double ConfinedWallEnergy(Particle* pi)
+		{
+			double epsilon = 1.0;
+			double sigma = 1;
+			double wall_rc = 1.00;
+			double LJ_wall_E = 0.0;
+			double LJ_E = 0;
+
+
+			double r_y_high = fabs(pi->GetPosition()[1] - _yhigh);
+			double r_y_low = fabs(pi->GetPosition()[1] - _ylow);
+			double r_z_high = fabs(pi->GetPosition()[2] - _zhigh);
+			double r_z_low = fabs(pi->GetPosition()[2] - _zlow);
+
+			std::cout <<"THE ylow is  " << r_y_low <<std::endl; 
+			std::cout <<"THE yhigh is  " << r_y_high <<std::endl; 
+			std::cout <<"THE zlow is  " << r_z_low <<std::endl; 
+			std::cout <<"THE zhigh is  " << r_z_high <<std::endl; 
+
+			double arr[] = {r_y_high, r_y_low, r_z_high, r_z_low};
+			std::vector<double> vec (arr, arr + sizeof(arr) / sizeof(arr[0]) );
+			
+			for (std::vector<int>::size_type k = 0; k != vec.size(); k++)
+			{
+				double r_calc = vec[k];
+				
+				if (r_calc <= wall_rc)
+				{
+					
+					LJ_E = 4.0*epsilon*(pow(sigma/r_calc, 12) - pow(sigma/r_calc,6)) - 
+					4.0*epsilon*(pow(sigma/wall_rc, 12) - pow(sigma/wall_rc,6));
+					
+					/*
+					LJ_E = epsilon*(0.13333*pow(sigma/r_calc, 9) - pow(sigma/r_calc,3)) - 
+					epsilon*(0.13333*pow(sigma/wall_rc, 9) - pow(sigma/wall_rc,3));  
+					*/
+
+					std::cout << std::fixed <<"THE LJ_E  " << LJ_E <<std::endl;
+					std::cout << std::fixed <<"I AM BELOW OR AT WALL_RC  " << r_calc <<std::endl;
+				}else
+				{
+					LJ_E = 0.0;
+				}
+
+				LJ_wall_E += LJ_E;
+			}
+
+			std::cout << std::fixed <<"LJ_wall_E is  " << LJ_wall_E <<std::endl; 
+			std::cout << std::fixed <<"******************************************"<<std::endl;
+			std::cout << std::fixed <<" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+			std::cout << std::fixed <<"                                          "<<std::endl;
+			std::cout << std::fixed <<"                                           "<<std::endl;
+			return LJ_wall_E;
+			// ***********WALL INTERACTION ENERGY ADDED**************************
+		}
+
+
+
 		virtual void Perform(WorldManager* wm, 
 							 ForceFieldManager* ffm, 
 							 const MoveOverride& override) override
 		{
-			// where is the WorldManager arg coming from, i don't remember specifying wm in the json input files
-			auto store = 0; //*********
-			auto store_mu = 0; //*********
-			auto store_lambda = 0; //*********
-			auto store_N = 0; //*********
+			auto store = 0;
+			auto store_mu = 0;
+			auto store_lambda = 0;
+			auto store_N = 0; 
 
 			// Get random world.
 			World* w = wm->GetRandomWorld();
@@ -153,23 +214,8 @@ namespace SAPHRON
 
 
 			// *************** NEW region based ADDITION ***********//
-
-			//auto V = w->GetVolume(); 
-			double _del = 0.2;
-
-			store_xhi = _xhigh;
-			store_xlo = _xlow;
-
-			_xhigh = _xhigh-_del;
-			_xlow = _xlow + _del;
-
-			_yhigh = _yhigh-_del;
-			_ylow = _ylow + _del;
-
-			_zhigh = _zhigh-_del;
-			_zlow = _zlow + _del;
-
 			// get the specified volume region
+			// make sure to specify the saphron box size corrected for wall thickness in lammps, so _ylow is 1 more than where the low wall is placed
 			auto V = abs(_xhigh - _xlow) * abs(_yhigh - _ylow) * abs(_zhigh - _zlow);
 
 			// ***************************************************//
@@ -191,21 +237,18 @@ namespace SAPHRON
 
 
 
+
 				// *************** NEW region based  ***********//
 				// this new region can be cubic or rectangular
 				// this can be used for confinement too but have to specify 6 dimensions
 				// even though evaluate energy and evaluate pressure takes into account world volume, since delta E and P, so it doesn't seem to matter
 				// and delta E and P should accurately take into account delta E due to particle insertion 
 
-				// get box dimensions again
+				// define a new matrix
 				Matrix3D H_store(arma::fill::zeros);
 				H_store(0,0) = abs(_xhigh - _xlow);
 				H_store(1,1) = abs(_yhigh - _ylow);
 				H_store(2,2) = abs(_zhigh - _zlow);
-				//const auto H_store = w->GetHMatrix();
-
-				// UPDATE H_store BASED ON region DIMENSIONS
-				//H_store(0,0) = abs(_xhigh - _xlow);    H_store(1,1) = abs(_yhigh - _ylow);    H_store(2,2) = abs(_zhigh - _zlow);
 
 				// create a new vector shift that will be added elementwise
 				Vector3D shift{_xlow, _ylow, _zlow};
@@ -260,41 +303,47 @@ namespace SAPHRON
 
 
 				auto lambda = w->GetWavelength(id);
-				store_lambda = lambda; //*********
-				store_mu = mu; //*********
-				store_N = N; //*********
-			
-				// Evaluate new energy for each particle. 
-				// Insert particle one at a time. Done this way
-				// to prevent double counting in the forcefieldmanager
-				// Can be adjusted later if wated.
-
+				store_lambda = lambda;
+				store_mu = mu;
+				store_N = N; 
 				w->AddParticle(plist[i]);
 				Prefactor*=V/(lambda*lambda*lambda*(N+1))*exp(beta*mu);
-				store = i; //*********
+				store = i;
 
 			}
-
-			//for (unsigned int i = 0; i < NumberofParticles; i++)
-				//ef += ffm->EvaluateEnergy(*plist[i]);
 			auto ef = ffm->EvaluateEnergy(*w);
-
-			//for (unsigned int i = 0; i < NumberofParticles-1; i++)
-			//	for (unsigned int j = i+1; j < NumberofParticles; j++)
-			//		ef -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
-
-			// Evaluate current tail energy and add diff to energy.
-			//auto wef = ffm->EvaluateTailEnergy(*w);
-			//ef.energy.tail = wef.energy.tail - wei.tail;
-			//ef.pressure.ptail = wef.pressure.ptail - wpi.ptail;
-
 			++_performed;
+
+
+
+
+
+			/* CALCULATION OF WALL ENERGY*/
+			// ***********WALL INTERACTION ENERGY ADDED**************************
+			//IMP:- THIS SECTION IS ONLY FOR POLYMER CONFINEMENT SIMULATION WHERE YOU ARE CONFINING BY lj/wall, BECAUSE OF THAT 
+			//YOU HAVE TO ADD ADDITIONAL ENERGY TO PACC EQUATION. IF THERE IS NO lj/wall THEN THIS SECTION OF WALL INTERACTION ENERGY 
+			//IS NOT NEEDED !!
+			//HENCE THIS WILL BE COMMENTED OUT MOST OF THE TIME UNLESS YOU ARE DOING THIS SPECIFIC CASE FOR GCMC SIMULATION
+			//NOTE ALSO THAT YOU WILL HAVE TO TAKE CARE WHAT KIND OF WALL DID YOU PUT IN, I.E. IS IT 9-3, 12-6 AND ACCORDINGLY
+			//CHANGE THE PARAMETERS EPSILON RC ETC !!!
+			double WALL_E = 0;
+			for (unsigned int i = 0; i < NumberofParticles; i++)
+			{
+				WALL_E += ConfinedWallEnergy(plist[i]);
+			}
+			// ***********WALL INTERACTION ENERGY ADDED**************************
+
+
+
+
+
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.8.
 			// However,t iwas modified since we are using the *final* particle number.
 			ef.energy -= wei; 
 			ef.pressure -= wpi;
-			auto pacc = Prefactor*exp(-beta*ef.energy.total());
+			//auto pacc = Prefactor*exp(-beta*ef.energy.total());
+			auto pacc = Prefactor*exp(-beta*ef.energy.total()-WALL_E); // PACC WITH WALL ENERGY ADDED IN
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
@@ -310,24 +359,27 @@ namespace SAPHRON
 				// Update energies and pressures.
 				w->IncrementEnergy(ef.energy);
 				w->IncrementPressure(ef.pressure);
-				std::cout << " THIS IS INSERT MOVE "<<std::endl; //*********
-				std::cout << " PACC IS: " << pacc <<std::endl;		//*********
-				std::cout << " total energy is:  " << ef.energy.total() <<std::endl; //*********
-				std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl; //*********
-				std::cout << " Prefactor: " << Prefactor <<std::endl; //*********
-				std::cout << " Volume: " << V <<std::endl; //*********
-				std::cout << " lambda: " << store_lambda <<std::endl; //*********
-				std::cout << " mu: " << store_mu <<std::endl; //*********
-				std::cout << " N: " << store_N <<std::endl; //*********
-				std::cout << std::fixed <<" xlo " << _xlow <<std::endl; //*********
-				std::cout << std::fixed <<" xhi " << _xhigh <<std::endl; //*********
-				std::cout << std::fixed <<" ylo " << _ylow <<std::endl; //*********
-				std::cout << std::fixed <<" yhi " << _yhigh <<std::endl; //*********
-				std::cout << std::fixed <<" zlo " << _zlow <<std::endl; //*********
-				std::cout << std::fixed <<" zhi " << _zhigh <<std::endl; //*********
-				std::cout << std::fixed <<" particle_position " << plist[store]->GetPosition() <<std::endl; //*********
-				std::cout << " ******************** "<<std::endl; //*********
-				std::cout << "                       "<<std::endl; //*********
+				/*
+				std::cout << " THIS IS INSERT MOVE "<<std::endl; 
+				std::cout << " PACC IS: " << pacc <<std::endl;		
+				std::cout << " total energy is:  " << ef.energy.total() <<std::endl; 
+				std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl; 
+				std::cout << " Prefactor: " << Prefactor <<std::endl; 
+				std::cout << " Volume: " << V <<std::endl; 
+				std::cout << " lambda: " << store_lambda <<std::endl; 
+				std::cout << " mu: " << store_mu <<std::endl; 
+				std::cout << " N: " << store_N <<std::endl; 
+				std::cout <<" xlo " << _xlow <<std::endl; 
+				std::cout <<" xhi " << _xhigh <<std::endl; 
+				std::cout <<" ylo " << _ylow <<std::endl; 
+				std::cout <<" yhi " << _yhigh <<std::endl; 
+				std::cout <<" zlo " << _zlow <<std::endl; 
+				std::cout <<" zhi " << _zhigh <<std::endl; 
+				std::cout <<" particle_position " << plist[store]->GetPosition() <<std::endl; 
+				std::cout <<" NumberofParticles " << NumberofParticles <<std::endl; 
+				std::cout << " ******************** "<<std::endl; 
+				std::cout << "                       "<<std::endl; 
+				*/
 			}
 		}
 

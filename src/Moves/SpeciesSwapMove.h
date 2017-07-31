@@ -13,6 +13,9 @@ namespace SAPHRON
 	// alter the underlying structure of the particles, but merely exchanges their species identifier.
 	// WARNING: This is intended for use on lattice/spin or simple single atom systems. Use on molecular 
 	// systems may result in undesirable behavior.
+
+	// THIS CODE AS IT IS WILL WORK FOR CONFINEMENT SYSTEMS ALSO WHERE SPECIES TO BE SWAPPED ARE PRESENT IN CONFINEMENT
+	// AT ALL TIMES. NO VOLUME TERM HERE, SO NO NEED TO WORRY ABOUT V OF CONFINEMENT
 	class SpeciesSwapMove : public Move
 	{
 	private:
@@ -131,23 +134,19 @@ namespace SAPHRON
 					p2 = w->DrawRandomParticle();
 			}
 
-			// TODO: FFM is known to double count energies of two particles that are neighbors.
-			//auto ei = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
 			auto ei = ffm->EvaluateEnergy(*w);
-			// Increment pulled out since function is called for undo later on.
+
 			Perform(p1, p2);
 			++_performed;
 
 			auto ef = ffm->EvaluateEnergy(*w);
-
-			//auto ef = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
-			Energy de = ef.energy - ei.energy;
+			auto de = ef - ei;
 
 			// Get sim info for kB.
 			auto& sim = SimInfo::Instance();
 
 			// Acceptance probability. 
-			double p = exp(-de.total()/(w->GetTemperature()*sim.GetkB()));
+			double p = exp(-de.energy.total()/(w->GetTemperature()*sim.GetkB()));
 			p = p > 1.0 ? 1.0 : p;
 
 			// Reject or accept move.
@@ -159,8 +158,8 @@ namespace SAPHRON
 			else
 			{
 				// Update energies and pressures.
-				w->IncrementEnergy(de);
-				w->IncrementPressure(ef.pressure - ei.pressure);
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
 			}	
 		}
 

@@ -107,10 +107,10 @@ namespace SAPHRON
 							 ForceFieldManager* ffm, 
 							 const MoveOverride& override) override
 		{
-			auto store = 0; //*********
-			auto store_mu = 0; //*********
-			auto store_lambda = 0; //*********
-			auto store_N = 0; //*********
+			auto store = 0;
+			auto store_mu = 0;
+			auto store_lambda = 0; 
+			auto store_N = 0; 
 
 			// Get random world.
 			World* w = wm->GetRandomWorld();
@@ -140,9 +140,9 @@ namespace SAPHRON
 			auto V = w->GetVolume();
 			auto& comp = w->GetComposition();
 
-			// Get previous energy and pressure.
-			auto wei = w->GetEnergy();
-			auto wpi = w->GetPressure();
+			
+			// Get previous energy
+			auto ei = ffm->EvaluateEnergy(*w);
 
 			// Generate a random position and orientation for particle insertion.
 			for (unsigned int i = 0; i < NumberofParticles; i++)
@@ -171,41 +171,23 @@ namespace SAPHRON
 				auto mu = w->GetChemicalPotential(id);
 				auto lambda = w->GetWavelength(id);
 
-				store_lambda = lambda; //*********
-				store_mu = mu; //*********
-				store_N = N; //*********
-			
-				// Evaluate new energy for each particle. 
-				// Insert particle one at a time. Done this way
-				// to prevent double counting in the forcefieldmanager
-				// Can be adjusted later if wated.
+				store_lambda = lambda;
+				store_mu = mu;
+				store_N = N;
 
 				w->AddParticle(plist[i]);
 				Prefactor*=V/(lambda*lambda*lambda*(N+1))*exp(beta*mu);
-				store = i; //*********
+				store = i;
 
 			}
 
-			//for (unsigned int i = 0; i < NumberofParticles; i++)
-				//ef += ffm->EvaluateEnergy(*plist[i]);
 			auto ef = ffm->EvaluateEnergy(*w);
-
-			//for (unsigned int i = 0; i < NumberofParticles-1; i++)
-			//	for (unsigned int j = i+1; j < NumberofParticles; j++)
-			//		ef -= ffm->EvaluateInterEnergy(*plist[i], *plist[j]);
-
-			// Evaluate current tail energy and add diff to energy.
-			//auto wef = ffm->EvaluateTailEnergy(*w);
-			//ef.energy.tail = wef.energy.tail - wei.tail;
-			//ef.pressure.ptail = wef.pressure.ptail - wpi.ptail;
-
 			++_performed;
 
+			auto de = ef - ei;
+
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.8.
-			// However,t iwas modified since we are using the *final* particle number.
-			ef.energy -= wei; 
-			ef.pressure -= wpi;
-			auto pacc = Prefactor*exp(-beta*ef.energy.total());
+			auto pacc = Prefactor*exp(-beta*de.energy.total());
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
@@ -219,19 +201,29 @@ namespace SAPHRON
 			else
 			{
 				// Update energies and pressures.
-				w->IncrementEnergy(ef.energy);
-				w->IncrementPressure(ef.pressure);
-				//std::cout << " THIS IS INSERT MOVE "<<std::endl; //*********
-				//std::cout << " PACC IS: " << pacc <<std::endl;		//*********
-				//std::cout << " total energy is:  " << ef.energy.total() <<std::endl; //*********
-				//std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl; //*********
-				//std::cout << " Prefactor: " << Prefactor <<std::endl; //*********
-				//std::cout << " Volume: " << V <<std::endl; //*********
-				//std::cout << " lambda: " << store_lambda <<std::endl; //*********
-				//std::cout << " mu: " << store_mu <<std::endl; //*********
-				//std::cout << " N: " << store_N <<std::endl; //*********
-				//std::cout << " ******************** "<<std::endl; //*********
-				//std::cout << "                       "<<std::endl; //*********
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
+				//std::cout << " THIS IS INSERT MOVE "<<std::endl;
+				//std::cout << " PACC IS: " << pacc <<std::endl;	
+				//std::cout << " total energy is:  " << ef.energy.total() <<std::endl;
+				//std::cout << " id: " << plist[store]->GetSpeciesID() <<std::endl;
+				//std::cout << " Prefactor: " << Prefactor <<std::endl;
+				//std::cout << " Volume: " << V <<std::endl;
+				//std::cout << " lambda: " << store_lambda <<std::endl;
+				//std::cout << " mu: " << store_mu <<std::endl;
+				//std::cout << " N: " << store_N <<std::endl;
+				//std::cout << " ******************** "<<std::endl;
+				//std::cout << "                       "<<std::endl;
+				/*
+				std::cout << " *********** INSERT MOVE ACCEPTED!!!! ************** "<<std::endl;
+				std::cout << "the GetEnergy method delta energy is "<<ef.energy.total()<<std::endl;
+				std::cout << "the EvaluateEnergy method delta energy is "<<ef_store.energy.total()<<std::endl;
+				std::cout << "the world energy after insert "<<w->GetEnergy().total()<<std::endl;
+				std::cout << " *********** IIIIIIIIIIIIIIIIIIIIIIIII ************** "<<std::endl;
+				std::cout << "                                                      "<<std::endl;
+				*/
+
+
 			}
 		}
 

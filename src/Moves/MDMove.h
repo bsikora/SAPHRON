@@ -56,6 +56,9 @@ namespace SAPHRON
 		double _wallspace_z = -0.000000; ///***** 0.000001
 		int _perma_mark = 0; ///*****
 
+		int MDsweeps = 0;   ///*****
+		int hit_detection_numb = 0;   ///*****
+
 		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
 		{
@@ -297,7 +300,6 @@ namespace SAPHRON
 				_L2S_izmap[_L2S_map[i]] = ((image[i] >> IMG2BITS) - IMGMAX); ///*****
 			}
 
-	///*****// NOTE THIS METHOD IS BUILT FOR SINGLE POLYMER IN THE SYSTEM ONLY, FOR DOUBLE POLYMER FURTHER CHANGES WOULD BE REQUIRED
 			// PRINTING OUT RG AND CHARGE FRAC VALUES
 			if (_perma_mark == 0)
 			{
@@ -319,12 +321,12 @@ namespace SAPHRON
 	  				}
 				}
 			}
-			//std::cout<< "perma_mark is"<< _perma_mark<<std::endl;
+
+	// ****************************** CASES BASED ON PERMA_MARK ******************************************//
 
 			if (_perma_mark == 1)
 			{
-				/* code */
-			
+
 			int sumCharge = 0;
 			int num_monomers = 0;
 			for(auto& p : world)
@@ -352,12 +354,41 @@ namespace SAPHRON
 		  	"     "<<std::to_string(PE_value)<<"     "<<std::to_string(Total_E_value)<<"     "<<std::to_string(num_monomers)<<
 		  	"     "<<std::to_string(sumCharge)<<std::endl;
 		  	Rgchgfracfile.close();
+
+
+			/**** THIS IS THE FILE WITH APPENDED SNAPSHOTS (USE WHEN NECESSARY)***
+				if (hit_detection_numb == 9)
+				{
+					std::ofstream dump_file;  ///*****
+					int MDstep = MDsweeps*1000;
+					dump_file.open("Appended_snapshots_"+_input_file, std::ofstream::app);
+					dump_file<<"%%################!!!!!!The MD step is: "<<MDstep<<" ################!!!!!!!!!!"<<std::endl;
+					for(auto& p : world)
+						if(p->HasChildren())
+						{
+							for(auto& cp : *p)
+							{
+								dump_file<< _S2L_map[cp->GetGlobalIdentifier()] <<" "<< _S2L_imap[cp->GetSpecies()] <<" "<<
+								cp->GetCharge()<<" ";
+								auto& xyz = cp->GetPosition(); // correct cause _L2S_map[i]->SetPosition(pos) update before
+							    for(auto& x : xyz){
+		    						dump_file<< x <<" ";
+								}
+								dump_file<<_L2S_ixmap[cp]<<" "<<_L2S_iymap[cp]<<" "<<_L2S_izmap[cp];
+								dump_file<<std::endl;
+		      				}
+		      				dump_file.close();
+		  				}
+					hit_detection_numb= -1;
+				}
+				hit_detection_numb++;
+			** THIS IS THE FILE WITH APPENDED SNAPSHOTS (USE WHEN NECESSARY)****/
+
 		  }
 
 			if (_perma_mark == 2)
 			{
-				/* code */
-			
+
 			int sumCharge_1 = 0;
 			int sumCharge_2 = 0;
 			int num_monomers_1 = 0;
@@ -406,7 +437,7 @@ namespace SAPHRON
 		  	Rgchgfracfile.close();
 		  }
   	///*****
-
+		  	MDsweeps++;
 			delete [] x;
 			delete [] v;
 			delete [] image;
@@ -431,8 +462,9 @@ namespace SAPHRON
 			for(int i = 0; i < sids.size(); i++)
 				_S2L_imap[sids[i]] = lids[i];
 
-			// REMOVING THE RG_CHARGE_FRACTION FILE AT THE BEGINNING OF THE RUN
+			// REMOVING THE RG_CHARGE_FRACTION FILE AND DUMP FILE AT THE BEGINNING OF THE RUN
 			remove(("Rg_chg_frac_"+_input_file).c_str()); ///*****
+			remove(("Appended_snapshots_"+_input_file).c_str()); ///*****
 
 		}
 
@@ -441,11 +473,9 @@ namespace SAPHRON
 					 const MoveOverride& override) override
 		{
 			World* w = wm->GetRandomWorld();
-			
+
 			// matches id in spahron to lammps
 			UpdateMap(*w);
-
-			// this writes lammps data file
 			WriteDataFile(*w);
 			
 			// Silence of the lammps.

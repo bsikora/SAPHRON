@@ -1,0 +1,51 @@
+{
+	"type" : "object",
+	"varname" : "ConfinementDeleteParticleMove",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["ConfinementDeleteParticle"]
+		},
+		"species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"multi_delete" : {
+			"type" : "boolean"
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
+		},
+		"op_prefactor" : {
+			"tyoe" : "boolean"
+		},
+		"xlo" : {
+			"type" : "number"
+		},
+		"xhi" : {
+			"type" : "number"
+		},
+		"ylo" : {
+			"type" : "number"
+		},
+		"yhi" : {
+			"type" : "number"
+		},
+		"zlo" : {
+			"type" : "number"
+		},
+		"zhi" : {
+			"type" : "number"
+		}
+	},
+	"required" : ["type", "species", "xlo", "xhi", "ylo", "yhi", "zlo", "zhi"],
+	"additionalProperties": false
+}

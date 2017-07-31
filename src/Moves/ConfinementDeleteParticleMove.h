@@ -10,7 +10,7 @@
 namespace SAPHRON
 {
 	// Class for particle deletion move.
-	class DeleteParticleMove : public Move
+	class ConfinementDeleteParticleMove : public Move
 	{
 	private: 
 		Rand _rand;
@@ -20,12 +20,21 @@ namespace SAPHRON
 		bool _prefac;
 		bool _multi_delete;
 		unsigned _seed;
+		double _xlow;
+		double _ylow;
+		double _zlow;
+		double _xhigh;
+		double _yhigh;
+		double _zhigh;
 
 	public:
-		DeleteParticleMove(const std::vector<int>& species, 
-						   bool multi_delete, unsigned seed = 45843) :
+		ConfinementDeleteParticleMove(const std::vector<int>& species, 
+						   bool multi_delete,
+   						   double xlow, double ylow, double zlow,
+						   double xhigh, double yhigh, double zhigh,
+						   unsigned seed = 45843) :
 		_rand(seed), _rejected(0), _performed(0), _species(0), 
-		_prefac(true), _multi_delete(multi_delete), _seed(seed)
+		_prefac(true), _multi_delete(multi_delete), _xlow(xlow), _ylow(ylow), _zlow(zlow), _xhigh(xhigh), _yhigh(yhigh), _zhigh(zhigh), _seed(seed)
 		{
 			// Verify species list and add to local vector.
 			auto& list = Particle::GetSpeciesList();
@@ -42,10 +51,13 @@ namespace SAPHRON
 			}
 		}
 
-		DeleteParticleMove(const std::vector<std::string>& species,
-						   bool multi_delete, unsigned seed = 45843) :
+		ConfinementDeleteParticleMove(const std::vector<std::string>& species,
+						   bool multi_delete,
+   						   double xlow, double ylow, double zlow,
+						   double xhigh, double yhigh, double zhigh,
+						   unsigned seed = 45843) :
 		_rand(seed), _rejected(0), _performed(0), _species(0), 
-		_prefac(true), _multi_delete(multi_delete), _seed(seed)
+		_prefac(true), _multi_delete(multi_delete), _xlow(xlow), _ylow(ylow), _zlow(zlow), _xhigh(xhigh), _yhigh(yhigh), _zhigh(zhigh), _seed(seed)
 		{
 			// Verify species list and add to local vector.
 			auto& list = Particle::GetSpeciesList();
@@ -106,19 +118,51 @@ namespace SAPHRON
 			double Prefactor = 1;
 			auto& sim = SimInfo::Instance();
 			auto beta = 1.0/(sim.GetkB()*w->GetTemperature());
-			auto V = w->GetVolume();
+
+
+
+			// *************** NEW region based ADDITION ***********//
+			//auto V = w->GetVolume();
+			// even though evaluate energy and evaluate pressure takes into account world volume, since delta E and P, so it doesn't seem to matter
+			// and delta E and P should accurately take into account delta E due to particle insertion 
+
+			// NOTE:- THIS CURRENT IMPLEMENTATION IS FOR THE CONFINEMENT ONLY, MEANING WHEN THE ALL THE PARTICLES REMAIN THE CONFINEMENT SPECIFIED BY REGION INSERTION
+			// AND THE PARTICLES DOES NOT EVER LEAVE THE CONFINED REGION
+
+			// FOR SYSTEMS WHERE PARTICLE LEAVE THE REGION SPECIFIED BY REGION MOVE (E.G. MEMBRANE) THEN DIFFERENT IMPLEMENTATION REQUIRED. I.E. CURRENTLY NAMED AS CONFINEMENT
+			// DELETION MOVE
+			auto V = abs(_xhigh - _xlow) * abs(_yhigh - _ylow) * abs(_zhigh - _zlow);
+			// ***************************************************//
+
+
+			//EPTuple ei;
 			auto& comp = w->GetComposition();
 			
-
-			// Get previous energy
-			auto ei = ffm->EvaluateEnergy(*w);
+			// Get previous tail energy and pressure.
+			auto wei = w->GetEnergy();
+			auto wpi = w->GetPressure();
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 			{
 
 				auto id = plist[i]->GetSpeciesID();
 				auto N = comp[id];
+
+
+
+
+				// *************** NEW CONFINEMENT ADDITION ***********//
 				auto mu = w->GetChemicalPotential(id);
+				// you can use above statement but in that case the chemical pot set in the json script
+				// is the chemical potential of species in the region
+
+				// ***************************************************//
+
+
+
+
+
+
 				auto lambda = w->GetWavelength(id);
 
 				Prefactor*=(lambda*lambda*lambda*N)/V*exp(-beta*mu);
@@ -128,14 +172,15 @@ namespace SAPHRON
 			{
 				w->RemoveParticle(plist[i]);
 			}
-			
-			auto ef = ffm->EvaluateEnergy(*w);
+			auto ei = ffm->EvaluateEnergy(*w);
 			++_performed;
 
-			auto de = ef - ei;
+			ei.energy -= wei; 
+			ei.pressure -= wpi;
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.9.
-			auto pacc = Prefactor*exp(-beta*de.energy.total());
+			//auto pacc = Prefactor*exp(beta*ei.energy.total()); // WRONG PACC CHECKED IT WITH GCMC LJ/ NIST TEST
+			auto pacc = Prefactor*exp(-beta*ei.energy.total());
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
@@ -144,6 +189,7 @@ namespace SAPHRON
 				for (unsigned int i = 0; i < NumberofParticles; i++)
 				{
 					w->AddParticle(plist[i]);
+					// this adds the particle back to the same position
 				}
 				++_rejected;
 			}
@@ -155,12 +201,12 @@ namespace SAPHRON
 					w->StashParticle(plist[i]);
 					store = i;
 				}
-				// Update energies and pressures.
-				w->SetEnergy(ef.energy);
-				w->SetPressure(ef.pressure);
+
 				// Update energies and pressures.
 				//w->IncrementEnergy(-1.0*ei.energy);
 				//w->IncrementPressure(-1.0*ei.pressure);
+				w->IncrementEnergy(ei.energy);
+				w->IncrementPressure(ei.pressure);
 				//std::cout << " THIS IS DELETE MOVE "<<std::endl;
 				//std::cout << " PACC IS " << pacc <<std::endl;	
 				//std::cout << " total energy is  " << ei.energy.total() <<std::endl;
@@ -168,14 +214,6 @@ namespace SAPHRON
 				//std::cout << " Prefactor " << Prefactor <<std::endl;
 				//std::cout << " ******************** "<<std::endl;
 				//std::cout << "                       "<<std::endl;
-				/*
-				std::cout << " *********** DELETE MOVE ACCEPTED!!!! ************** "<<std::endl;
-				std::cout << "the GetEnergy method delta energy is "<<ei.energy.total()<<std::endl;
-				std::cout << "the EvaluateEnergy method delta energy is "<<ei_store.energy.total()<<std::endl;
-				std::cout << "the world energy after insert "<<w->GetEnergy().total()<<std::endl;
-				std::cout << " *********** DDDDDDDDDDDDDDDDDDDDDDDDD ************** "<<std::endl;
-				std::cout << "                                                      "<<std::endl;
-				*/
 			}
 		}
 
@@ -310,9 +348,9 @@ namespace SAPHRON
 		// Clone move.
 		Move* Clone() const override
 		{
-			return new DeleteParticleMove(static_cast<const DeleteParticleMove&>(*this));
+			return new ConfinementDeleteParticleMove(static_cast<const ConfinementDeleteParticleMove&>(*this));
 		}
 
-		~DeleteParticleMove(){}
+		~ConfinementDeleteParticleMove(){}
 	};
 }
