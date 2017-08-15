@@ -131,44 +131,38 @@ namespace SAPHRON
 			double r_z_high = fabs(pi->GetPosition()[2] - _zhigh);
 			double r_z_low = fabs(pi->GetPosition()[2] - _zlow);
 
-			std::cout <<"THE ylow is  " << r_y_low <<std::endl; 
-			std::cout <<"THE yhigh is  " << r_y_high <<std::endl; 
-			std::cout <<"THE zlow is  " << r_z_low <<std::endl; 
-			std::cout <<"THE zhigh is  " << r_z_high <<std::endl; 
+			//std::cout <<"THE ylow is  " << r_y_low <<std::endl; 
+			//std::cout <<"THE yhigh is  " << r_y_high <<std::endl; 
+			//std::cout <<"THE zlow is  " << r_z_low <<std::endl; 
+			//std::cout <<"THE zhigh is  " << r_z_high <<std::endl; 
 
 			double arr[] = {r_y_high, r_y_low, r_z_high, r_z_low};
 			std::vector<double> vec (arr, arr + sizeof(arr) / sizeof(arr[0]) );
-			
 			for (std::vector<int>::size_type k = 0; k != vec.size(); k++)
 			{
 				double r_calc = vec[k];
-				
 				if (r_calc <= wall_rc)
 				{
-					
 					LJ_E = 4.0*epsilon*(pow(sigma/r_calc, 12) - pow(sigma/r_calc,6)) - 
 					4.0*epsilon*(pow(sigma/wall_rc, 12) - pow(sigma/wall_rc,6));
-					
 					/*
 					LJ_E = epsilon*(0.13333*pow(sigma/r_calc, 9) - pow(sigma/r_calc,3)) - 
 					epsilon*(0.13333*pow(sigma/wall_rc, 9) - pow(sigma/wall_rc,3));  
 					*/
-
-					std::cout << std::fixed <<"THE LJ_E  " << LJ_E <<std::endl;
-					std::cout << std::fixed <<"I AM BELOW OR AT WALL_RC  " << r_calc <<std::endl;
+					//std::cout << std::fixed <<"THE LJ_E  " << LJ_E <<std::endl;
+					//std::cout << std::fixed <<"I AM BELOW OR AT WALL_RC  " << r_calc <<std::endl;
 				}else
 				{
 					LJ_E = 0.0;
 				}
-
 				LJ_wall_E += LJ_E;
 			}
 
-			std::cout << std::fixed <<"LJ_wall_E is  " << LJ_wall_E <<std::endl; 
-			std::cout << std::fixed <<"******************************************"<<std::endl;
-			std::cout << std::fixed <<" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
-			std::cout << std::fixed <<"                                          "<<std::endl;
-			std::cout << std::fixed <<"                                           "<<std::endl;
+			//std::cout << std::fixed <<"LJ_wall_E is  " << LJ_wall_E <<std::endl; 
+			//std::cout << std::fixed <<"******************************************"<<std::endl;
+			//std::cout << std::fixed <<" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+			//std::cout << std::fixed <<"                                          "<<std::endl;
+			//std::cout << std::fixed <<"                                           "<<std::endl;
 			return LJ_wall_E;
 			// ***********WALL INTERACTION ENERGY ADDED**************************
 		}
@@ -212,7 +206,6 @@ namespace SAPHRON
 
 
 
-
 			// *************** NEW region based ADDITION ***********//
 			// get the specified volume region
 			// make sure to specify the saphron box size corrected for wall thickness in lammps, so _ylow is 1 more than where the low wall is placed
@@ -224,9 +217,8 @@ namespace SAPHRON
 
 
 			auto& comp = w->GetComposition();
-			// Get previous energy and pressure.
-			auto wei = w->GetEnergy();
-			auto wpi = w->GetPressure();
+			// Get previous energy
+			auto ei = ffm->EvaluateEnergy(*w);
 
 			// Generate a random position and orientation for particle insertion.
 			for (unsigned int i = 0; i < NumberofParticles; i++)
@@ -340,10 +332,9 @@ namespace SAPHRON
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.8.
 			// However,t iwas modified since we are using the *final* particle number.
-			ef.energy -= wei; 
-			ef.pressure -= wpi;
-			//auto pacc = Prefactor*exp(-beta*ef.energy.total());
-			auto pacc = Prefactor*exp(-beta*ef.energy.total()-WALL_E); // PACC WITH WALL ENERGY ADDED IN
+			auto de = ef - ei;
+			//auto pacc = Prefactor*exp(-beta*de.energy.total());
+			auto pacc = Prefactor*exp(-beta*(de.energy.total()+WALL_E)); // PACC WITH WALL ENERGY ADDED IN
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
@@ -357,8 +348,8 @@ namespace SAPHRON
 			else
 			{
 				// Update energies and pressures.
-				w->IncrementEnergy(ef.energy);
-				w->IncrementPressure(ef.pressure);
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
 				/*
 				std::cout << " THIS IS INSERT MOVE "<<std::endl; 
 				std::cout << " PACC IS: " << pacc <<std::endl;		

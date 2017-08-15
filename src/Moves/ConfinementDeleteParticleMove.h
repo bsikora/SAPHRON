@@ -75,6 +75,60 @@ namespace SAPHRON
 			}
 		}
 
+
+		/*********************************WALL ENERGY CALCULATION **************************/
+		double ConfinedWallEnergy(Particle* pi)
+		{
+			double epsilon = 1.0;
+			double sigma = 1;
+			double wall_rc = 1.00;
+			double LJ_wall_E = 0.0;
+			double LJ_E = 0;
+
+
+			double r_y_high = fabs(pi->GetPosition()[1] - _yhigh);
+			double r_y_low = fabs(pi->GetPosition()[1] - _ylow);
+			double r_z_high = fabs(pi->GetPosition()[2] - _zhigh);
+			double r_z_low = fabs(pi->GetPosition()[2] - _zlow);
+
+			//std::cout <<"THE ylow is  " << r_y_low <<std::endl; 
+			//std::cout <<"THE yhigh is  " << r_y_high <<std::endl; 
+			//std::cout <<"THE zlow is  " << r_z_low <<std::endl; 
+			//std::cout <<"THE zhigh is  " << r_z_high <<std::endl; 
+
+			double arr[] = {r_y_high, r_y_low, r_z_high, r_z_low};
+			std::vector<double> vec (arr, arr + sizeof(arr) / sizeof(arr[0]) );
+			for (std::vector<int>::size_type k = 0; k != vec.size(); k++)
+			{
+				double r_calc = vec[k];
+				if (r_calc <= wall_rc)
+				{
+					LJ_E = 4.0*epsilon*(pow(sigma/r_calc, 12) - pow(sigma/r_calc,6)) - 
+					4.0*epsilon*(pow(sigma/wall_rc, 12) - pow(sigma/wall_rc,6));
+					/*
+					LJ_E = epsilon*(0.13333*pow(sigma/r_calc, 9) - pow(sigma/r_calc,3)) - 
+					epsilon*(0.13333*pow(sigma/wall_rc, 9) - pow(sigma/wall_rc,3));  
+					*/
+					//std::cout << std::fixed <<"THE LJ_E  " << LJ_E <<std::endl;
+					//std::cout << std::fixed <<"I AM BELOW OR AT WALL_RC  " << r_calc <<std::endl;
+				}else
+				{
+					LJ_E = 0.0;
+				}
+				LJ_wall_E += LJ_E;
+			}
+
+			//std::cout << std::fixed <<"LJ_wall_E is  " << LJ_wall_E <<std::endl; 
+			//std::cout << std::fixed <<"******************************************"<<std::endl;
+			//std::cout << std::fixed <<" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+			//std::cout << std::fixed <<"                                          "<<std::endl;
+			//std::cout << std::fixed <<"                                           "<<std::endl;
+			return LJ_wall_E;
+			// ***********WALL INTERACTION ENERGY ADDED**************************
+		}
+
+
+
 		virtual void Perform(WorldManager* wm, 
 							 ForceFieldManager* ffm, 
 							 const MoveOverride& override) override
@@ -138,9 +192,8 @@ namespace SAPHRON
 			//EPTuple ei;
 			auto& comp = w->GetComposition();
 			
-			// Get previous tail energy and pressure.
-			auto wei = w->GetEnergy();
-			auto wpi = w->GetPressure();
+			// Get previous energy
+			auto ei = ffm->EvaluateEnergy(*w);
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 			{
@@ -172,15 +225,34 @@ namespace SAPHRON
 			{
 				w->RemoveParticle(plist[i]);
 			}
-			auto ei = ffm->EvaluateEnergy(*w);
+			auto ef = ffm->EvaluateEnergy(*w);
 			++_performed;
 
-			ei.energy -= wei; 
-			ei.pressure -= wpi;
 
+
+
+			/* CALCULATION OF WALL ENERGY*/
+			// ***********WALL INTERACTION ENERGY ADDED**************************
+			//IMP:- THIS SECTION IS ONLY FOR POLYMER CONFINEMENT SIMULATION WHERE YOU ARE CONFINING BY lj/wall, BECAUSE OF THAT 
+			//YOU HAVE TO ADD ADDITIONAL ENERGY TO PACC EQUATION. IF THERE IS NO lj/wall THEN THIS SECTION OF WALL INTERACTION ENERGY 
+			//IS NOT NEEDED !!
+			//HENCE THIS WILL BE COMMENTED OUT MOST OF THE TIME UNLESS YOU ARE DOING THIS SPECIFIC CASE FOR GCMC SIMULATION
+			//NOTE ALSO THAT YOU WILL HAVE TO TAKE CARE WHAT KIND OF WALL DID YOU PUT IN, I.E. IS IT 9-3, 12-6 AND ACCORDINGLY
+			//CHANGE THE PARAMETERS EPSILON RC ETC !!!
+			double WALL_E = 0;
+			for (unsigned int i = 0; i < NumberofParticles; i++)
+			{
+				WALL_E += ConfinedWallEnergy(plist[i]);
+			}
+			// ***********WALL INTERACTION ENERGY ADDED**************************
+
+
+
+
+			auto de = ef - ei;
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.9.
-			//auto pacc = Prefactor*exp(beta*ei.energy.total()); // WRONG PACC CHECKED IT WITH GCMC LJ/ NIST TEST
-			auto pacc = Prefactor*exp(-beta*ei.energy.total());
+			//auto pacc = Prefactor*exp(-beta*ei.energy.total());
+			auto pacc = Prefactor*exp(-beta*(de.energy.total()-WALL_E)); // PACC WITH WALL ENERGY ADDED IN, notice!! the sign for wall has changed
 			pacc = pacc > 1.0 ? 1.0 : pacc;
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
@@ -205,8 +277,9 @@ namespace SAPHRON
 				// Update energies and pressures.
 				//w->IncrementEnergy(-1.0*ei.energy);
 				//w->IncrementPressure(-1.0*ei.pressure);
-				w->IncrementEnergy(ei.energy);
-				w->IncrementPressure(ei.pressure);
+				// Update energies and pressures.
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
 				//std::cout << " THIS IS DELETE MOVE "<<std::endl;
 				//std::cout << " PACC IS " << pacc <<std::endl;	
 				//std::cout << " total energy is  " << ei.energy.total() <<std::endl;
