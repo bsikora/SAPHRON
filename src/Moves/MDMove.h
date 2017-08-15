@@ -510,13 +510,48 @@ namespace SAPHRON
 			delete _lmp;
 		}
 
-		virtual void Perform(World*, 
-							 ForceFieldManager*, 
+		virtual void Perform(World* w, 
+							 ForceFieldManager* ffm, 
 							 DOSOrderParameter*, 
 							 const MoveOverride&) override
 		{
-			std::cerr << "MD move does not support DOS interface." << std::endl;
-			exit(-1);
+			//std::cerr << "MD move does not support DOS interface." << std::endl;
+			//exit(-1);
+
+			// matches id in spahron to lammps
+			UpdateMap(*w);
+			WriteDataFile(*w);
+			
+			// Silence of the lammps.
+			char **largs = (char**) malloc(sizeof(char*) * 3);
+			for(int i = 0; i < 3; ++i)
+				largs[i] = (char*) malloc(sizeof(char) * 1024);
+			sprintf(largs[0], " ");
+			sprintf(largs[1], "-screen");
+			sprintf(largs[2], "none");  ///*****
+
+             ///replace 0 with 3 and NULL with largs to suppress lammps output
+			_lmp = new LAMMPS(0, NULL, _comm_lammps);  
+			
+			// if minimize file exits lammps will run it
+			if(_minimize_file.compare("none") != 0)
+			{
+				ReadInputFile(_minimize_file);
+				_minimize_file = "none";
+			}
+			else
+			{
+				ReadInputFile(_input_file);
+			}
+			// updates positoin in saphron
+			UpdateSAPHRON(*w);
+
+			// Update energies and pressures.
+			auto wor_ef = ffm->EvaluateEnergy(*w);
+			w->SetEnergy(wor_ef.energy);
+			w->SetPressure(wor_ef.pressure);
+
+			delete _lmp;
 		}
 
 		// Turns on or off the acceptance rule prefactor for DOS order parameter.

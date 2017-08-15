@@ -380,7 +380,7 @@ namespace SAPHRON
             for(size_t i = 0; i < n; ++i)
             {
             	auto& sibling = siblings[i];
-                if(!particle.IsBondedNeighbor(sibling) && sibling != &particle)
+                if(/*!particle.IsBondedNeighbor(sibling) && */sibling != &particle)
                 {
                 	
                 	Position rij = particle.GetPosition() - sibling->GetPosition();
@@ -390,19 +390,20 @@ namespace SAPHRON
 
 					auto it = _nonbondedforcefields.find({particle.GetSpeciesID(), sibling->GetSpeciesID()});
 
-					//Electrostatics containing energy and virial
-					if(_electroff != nullptr)
-					{
-						auto ij = _electroff->Evaluate(particle, *sibling, rij, wid);
-						electro += ij.energy;
-					}		
-
 					if(it != _nonbondedforcefields.end())
 					{
 						auto* ff = it->second;
 						auto ij = ff->Evaluate(particle, *sibling, rij, wid);
 
 						vdw += ij.energy; // Sum nonbonded energy.
+					}
+
+					// UNCOMMENT THIS IF YOU WANT TO EXCLUDE BONDED NEIGHBORS FROM ELECTROSTATIC CALCULATION.
+					//Electrostatics containing energy and virial
+					if(_electroff != nullptr)
+					{
+						auto ij = _electroff->Evaluate(particle, *sibling, rij, wid);
+						electro += ij.energy;
 					}
                 }
             }

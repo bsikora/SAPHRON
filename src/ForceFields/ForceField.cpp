@@ -345,6 +345,25 @@ namespace SAPHRON
 
 			ff = new Harmonic(kspring, ro);
 		}
+		else if(type == "LennardJonesTS")
+		{
+			reader.parse(JsonSchema::LennardJonesTSFF, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			double eps = json["epsilon"].asDouble();
+			double sigma = json["sigma"].asDouble();
+			
+			CutoffList rc;
+			for(auto r : json["rcut"])
+				rc.push_back(r.asDouble());
+
+			ff = new LennardJonesTSFF(eps, sigma, rc);
+		}
 		else
 		{
 			throw BuildException({path + ": Unknown forcefield type specified."});

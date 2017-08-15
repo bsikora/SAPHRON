@@ -127,14 +127,14 @@ namespace SAPHRON
 			else
 			{
 				// Update energies and pressures.
-				//w->IncrementEnergy(de.energy);
-				//w->IncrementPressure(de.pressure);
+				w->IncrementEnergy(de.energy);
+				w->IncrementPressure(de.pressure);
 
 				/********************************/
 				// Update energies and pressures.
-				auto wor_ef = ffm->EvaluateEnergy(*w);
-				w->SetEnergy(wor_ef.energy);
-				w->SetPressure(wor_ef.pressure);
+				//auto wor_ef = ffm->EvaluateEnergy(*w);
+				//w->SetEnergy(wor_ef.energy);
+				//w->SetPressure(wor_ef.pressure);
 				/********************************/
 			}
 		}

@@ -48,13 +48,13 @@ namespace SAPHRON
 		double EvaluateOrderParameter(const World& w) const override
 		{
 			
-			auto ChargeFrac = 0.;
+			double ChargeFrac = 0.;
 
 			for(auto& p : _group1)
 			{
 				ChargeFrac += p->GetCharge();
 			}
-
+			std::cout << "CHARGE FRAC " << ChargeFrac << " " << "GROUP SIZE " << _group1.size() << std::endl;
 			ChargeFrac /= _group1.size();
 			ChargeFrac /= _base_charge;
 			
