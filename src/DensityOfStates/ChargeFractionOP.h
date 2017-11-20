@@ -29,6 +29,10 @@ namespace SAPHRON
 			auto de = ef.total() - ei.total();
 			auto dop = GetHistValue(opf) - GetHistValue(opi);
 
+			std::cout << "**** Ei " << ei.total() << " Ef " << ef.total() 
+					  << " Hi " << GetHistValue(opi) << " Hf " << GetHistValue(opf) 
+					  << " Oi " << opi << " Of " << opf << std::endl;
+			
 			auto p = exp(-de/(sim.GetkB()*w.GetTemperature()) - dop);
 			return p > 1.0 ? 1.0 : p;
 		}
@@ -54,9 +58,10 @@ namespace SAPHRON
 			{
 				ChargeFrac += p->GetCharge();
 			}
-			std::cout << "CHARGE FRAC " << ChargeFrac << " " << "GROUP SIZE " << _group1.size() << std::endl;
+			//std::cout << "CHARGE FRAC " << ChargeFrac << " " << "GROUP SIZE " << _group1.size() << std::endl;
 			ChargeFrac /= _group1.size();
 			ChargeFrac /= _base_charge;
+			//std::cout << "CHARGE FRAC after base charge " << ChargeFrac << " " << "GROUP SIZE " << _group1.size() << std::endl;
 			
 			return fabs(ChargeFrac);
 		}

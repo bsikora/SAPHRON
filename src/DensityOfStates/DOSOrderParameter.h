@@ -44,6 +44,7 @@ namespace SAPHRON
 			// outright.
 			if(_hist->GetBin(opf) == -1)
 			{
+				std::cout << "IM OUT OF BOUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUNDSZZZZZZZ!!!" << std::endl;
 				if(opi < _hist->GetMinimum() && opf > opi)
 					return 1.0;
 				else if(opi > _hist->GetMaximum() && opf < opi)

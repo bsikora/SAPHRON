@@ -52,12 +52,13 @@ namespace SAPHRON
 
 		int _bondnumber;
 		int _atomnumber;
-		double _wallspace_y = -0.000000; ///***** 0.000001
-		double _wallspace_z = -0.000000; ///***** 0.000001
+		double _wallspace_y = 0.000001; ///***** 0.000001
+		double _wallspace_z = 0.000001; ///***** 0.000001
 		int _perma_mark = 0; ///*****
 
 		int MDsweeps = 0;   ///*****
 		int hit_detection_numb = 0;   ///*****
+		int Rg_chg_hit_detection_numb = 0;   ///*****
 
 		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
@@ -324,7 +325,7 @@ namespace SAPHRON
 
 	// ****************************** CASES BASED ON PERMA_MARK ******************************************//
 
-			if (_perma_mark == 1)
+			if (_perma_mark == 1 && Rg_chg_hit_detection_numb == 9)    // added hit detection number for Rg file so it is not printed every MD
 			{
 
 			int sumCharge = 0;
@@ -354,6 +355,7 @@ namespace SAPHRON
 		  	"     "<<std::to_string(PE_value)<<"     "<<std::to_string(Total_E_value)<<"     "<<std::to_string(num_monomers)<<
 		  	"     "<<std::to_string(sumCharge)<<std::endl;
 		  	Rgchgfracfile.close();
+		  	Rg_chg_hit_detection_numb = -1;
 
 
 			/**** THIS IS THE FILE WITH APPENDED SNAPSHOTS (USE WHEN NECESSARY)***
@@ -386,7 +388,7 @@ namespace SAPHRON
 
 		  }
 
-			if (_perma_mark == 2)
+			if (_perma_mark == 2 && Rg_chg_hit_detection_numb == 9)
 			{
 
 			int sumCharge_1 = 0;
@@ -435,9 +437,54 @@ namespace SAPHRON
 		  	"     "<<std::to_string(sumCharge_1)<<
 		  	"     "<<std::to_string(sumCharge_2)<<std::endl;
 		  	Rgchgfracfile.close();
+		  	Rg_chg_hit_detection_numb = -1;
+
 		  }
+
+
+
+
+
+		  	/**** THIS IS FOR AJ PHASE DIAGRAM SIMULATIONS ****
+		  if (_perma_mark == 2)
+		  {
+			FILE *fp;
+			std::string file_to_read = "density_"+_input_file+".dat";
+
+			fp = fopen(file_to_read.c_str(),"r");
+			if (fp == NULL)
+			{
+				throw std::logic_error("ERROR: Could not open density file " + file_to_read);
+			}
+
+			std::ofstream chunkfile;
+			chunkfile.open("chunkdata_"+_input_file+".dat",std::ofstream::app);
+
+			// Read file line by line
+			int n;
+			char line[1024];
+			while (1) 
+			{
+
+				if (fgets(line,1024,fp) == NULL) n = 0;
+				else n = strlen(line) + 1;
+				if (n == 0) fclose(fp);
+				if (n == 0) break;
+		  		chunkfile<< std::setprecision(4)<<std::fixed<<line;
+		  		
+			}
+			chunkfile.close();
+		  }
+			**** THIS IS FOR AJ PHASE DIAGRAM SIMULATIONS ****/
+
+
+
+
+
+
   	///*****
 		  	MDsweeps++;
+		  	Rg_chg_hit_detection_numb++;
 			delete [] x;
 			delete [] v;
 			delete [] image;
@@ -487,7 +534,7 @@ namespace SAPHRON
 			sprintf(largs[2], "none");  ///*****
 
              ///replace 0 with 3 and NULL with largs to suppress lammps output
-			_lmp = new LAMMPS(0, NULL, _comm_lammps);  
+			_lmp = new LAMMPS(3, largs, _comm_lammps);  
 			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
@@ -501,7 +548,7 @@ namespace SAPHRON
 			}
 			// updates positoin in saphron
 			UpdateSAPHRON(*w);
-
+			w->UpdateNeighborList();
 			// Update energies and pressures.
 			auto wor_ef = ffm->EvaluateEnergy(*w);
 			w->SetEnergy(wor_ef.energy);
@@ -531,7 +578,7 @@ namespace SAPHRON
 			sprintf(largs[2], "none");  ///*****
 
              ///replace 0 with 3 and NULL with largs to suppress lammps output
-			_lmp = new LAMMPS(0, NULL, _comm_lammps);  
+			_lmp = new LAMMPS(3, largs, _comm_lammps);  
 			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
@@ -545,6 +592,7 @@ namespace SAPHRON
 			}
 			// updates positoin in saphron
 			UpdateSAPHRON(*w);
+			w->UpdateNeighborList();
 
 			// Update energies and pressures.
 			auto wor_ef = ffm->EvaluateEnergy(*w);

@@ -40,8 +40,8 @@ namespace SAPHRON
 			auto erfcr = std::erfc(_alpha*r);
 			ep.energy = _qdim*q1*q2*erfcr/r;
 
-			if(p1.HasParent() && p2.HasParent() && p1.GetParent() == p2.GetParent())
-				ep.energy -= _qdim*q1*q2*(1.-erfcr)/r;
+			//if(p1.HasParent() && p2.HasParent() && p1.GetParent() == p2.GetParent())
+			//	ep.energy -= _qdim*q1*q2*(1.-erfcr)/r;
 			
 			return ep;
 		}

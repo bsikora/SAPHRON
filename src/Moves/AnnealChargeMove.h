@@ -180,8 +180,9 @@ namespace SAPHRON
 				return;
 
 			// Evaluate initial energy. 
-			auto ei = ffm->EvaluateEnergy(*p1);
-			ei += ffm->EvaluateEnergy(*p2);
+			//auto ei = ffm->EvaluateEnergy(*p1);
+			//ei += ffm->EvaluateEnergy(*p2);
+			auto ei = ffm->EvaluateEnergy(*world);
 			auto opi = op->EvaluateOrderParameter(*world);
 
 			// Perform charge swap.
@@ -189,8 +190,9 @@ namespace SAPHRON
 			p2->SetCharge(c1);
 			++_performed;
 
-			auto ef = ffm->EvaluateEnergy(*p1);
-			ef += ffm->EvaluateEnergy(*p2);
+			//auto ef = ffm->EvaluateEnergy(*p1);
+			//ef += ffm->EvaluateEnergy(*p2);
+			auto ef = ffm->EvaluateEnergy(*world);
 			auto de = ef - ei;
 
 			// Update energies and pressures.
