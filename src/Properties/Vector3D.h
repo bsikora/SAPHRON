@@ -33,4 +33,14 @@ namespace SAPHRON
 	{
 		return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 	}
+
+
+	// Fast cross.
+	template<typename T1, typename T2>
+	inline Vector3D fcross(const T1& v1, const T2& v2)
+	{
+		Vector3D CrossVec{(v1[1]*v2[2] - v1[2]*v2[1]), (v1[2]*v2[0] - v1[0]*v2[2]), (v1[0]*v2[1] - v1[1]*v2[0])};
+		return CrossVec;
+	}
+
 }

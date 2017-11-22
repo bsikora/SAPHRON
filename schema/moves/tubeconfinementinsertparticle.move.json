@@ -1,0 +1,46 @@
+{
+	"type" : "object",
+	"varname" : "TubeConfinementInsertParticleMove",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["TubeConfinementInsertParticle"]
+		},
+		"stash_count" : {
+			"type" : "integer", 
+			"minimum" : 1
+		},
+		"species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"multi_insertion" : {
+			"type" : "boolean"
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
+		},
+		"cylrad" : {
+			"type" : "number"
+		},
+		"cylcen_y" : {
+			"type" : "number"
+		},
+		"cylcen_z" : {
+			"type" : "number"
+		},
+		"op_prefactor" : {
+			"type" : "boolean"
+		}
+	},
+	"required" : ["type", "stash_count", "species","cylrad","cylcen_y","cylcen_z"],
+	"additionalProperties": false
+}

@@ -1,0 +1,36 @@
+{
+	"type" : "object",
+	"varname" : "TubeConfinementDeleteParticleMove",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["TubeConfinementDeleteParticle"]
+		},
+		"species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"multi_delete" : {
+			"type" : "boolean"
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
+		},
+		"cylrad" : {
+			"type" : "number"
+		},
+		"op_prefactor" : {
+			"type" : "boolean"
+		}
+	},
+	"required" : ["type", "species","cylrad"],
+	"additionalProperties": false
+}

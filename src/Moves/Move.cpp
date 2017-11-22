@@ -26,6 +26,9 @@
 #include "RegionInsertParticleMove.h"
 #include "ConfinementDeleteParticleMove.h"
 #include "ConfinementAcidReactionMove.h"
+#include "TubeConfinementInsertParticleMove.h"
+#include "TubeConfinementDeleteParticleMove.h"
+#include "TubeConfinementAcidReactionMove.h"
 #ifdef USING_LAMMPS
 #include "MDMove.h"
 #endif
@@ -122,6 +125,38 @@ namespace SAPHRON
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
+		else if(type == "TubeConfinementAcidReaction")
+		{
+			reader.parse(JsonSchema::TubeConfinementAcidReactionMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs.
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			std::vector<std::string> reactants;
+			for(auto& s : json["swap"])
+				reactants.push_back(s.asString());
+
+			std::vector<std::string> products;
+			for(auto& s : json["products"])
+				products.push_back(s.asString());
+
+			auto pKo = json.get("mu", 0.0).asDouble();
+			auto scount = json["stash_count"].asInt();
+
+			auto prefac = json.get("op_prefactor", true).asBool();
+
+			auto cylin_rad = json.get("cylrad", 0.0).asDouble();
+			auto cylin_y = json.get("cylcen_y", 0.0).asDouble();
+			auto cylin_z = json.get("cylcen_z", 0.0).asDouble();
+
+			auto* m = new TubeConfinementAcidReactionMove(reactants,products,*wm,
+			scount, pKo,cylin_rad, cylin_y, cylin_z, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
 		else if(type == "AcidTitrate")
 		{
 			reader.parse(JsonSchema::AcidTitrationMove, schema);
@@ -211,6 +246,29 @@ namespace SAPHRON
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
+		else if(type == "TubeConfinementDeleteParticle")
+		{
+			reader.parse(JsonSchema::TubeConfinementDeleteParticleMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto multi_d = json.get("multi_delete", false).asBool(); 
+
+			std::vector<std::string> species;
+			for(auto& s : json["species"])
+				species.push_back(s.asString());
+
+			auto cylin_rad = json.get("cylrad", 0.0).asDouble();
+
+			auto* m = new TubeConfinementDeleteParticleMove(species, multi_d, cylin_rad, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
 		else if(type == "DirectorRotate")
 		{
 			reader.parse(JsonSchema::DirectorRotateMove, schema);
@@ -285,6 +343,32 @@ namespace SAPHRON
 			auto z_high = json.get("zhi", 0.0).asDouble();
 
 			auto* m = new RegionInsertParticleMove(species, *wm, scount, multi_i, x_low, y_low, z_low, x_high, y_high, z_high, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
+		else if(type == "TubeConfinementInsertParticle")
+		{
+			reader.parse(JsonSchema::TubeConfinementInsertParticleMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto scount = json["stash_count"].asInt();
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto multi_i = json.get("multi_insertion", false).asBool(); 
+
+			std::vector<std::string> species;
+			for(auto& s : json["species"])
+				species.push_back(s.asString());
+
+			auto cylin_rad = json.get("cylrad", 0.0).asDouble();
+			auto cylin_y = json.get("cylcen_y", 0.0).asDouble();
+			auto cylin_z = json.get("cylcen_z", 0.0).asDouble();
+
+			auto* m = new TubeConfinementInsertParticleMove(species, *wm, scount, multi_i, cylin_rad, cylin_y, cylin_z, seed);
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
