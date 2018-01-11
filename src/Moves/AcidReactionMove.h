@@ -358,13 +358,159 @@ namespace SAPHRON
 
 		}
 
-		virtual void Perform(World*, 
-							 ForceFieldManager*, 
-							 DOSOrderParameter*, 
-							 const MoveOverride&) override
+		virtual void Perform(World* w, 
+							 ForceFieldManager* ffm, 
+							 DOSOrderParameter* op, 
+							 const MoveOverride& override) override
 		{
-			std::cerr << "Acid Reaction move does not support DOS interface." << std::endl;
-			exit(-1);
+			// Draw random particle from random world.
+			Particle* p1 = nullptr;
+			Particle* p2 = nullptr;
+			Particle* ph = nullptr;
+
+			int RxnExtent = 1;
+			double rxndirection = _rand.doub();
+			//double bias = 1.0;
+			auto& comp = w->GetComposition();
+
+			//Determine reaction direction.
+			if(rxndirection>=0.5) //Forward reaction
+			{
+				RxnExtent = 1;
+				p1=w->DrawRandomPrimitiveBySpecies(_swap[0]);
+
+				if(p1==nullptr)
+					return;
+
+				//bias = double(comp[_swap[0]])/(comp[_swap[0]]+comp[_swap[1]]);
+			}
+
+			else //Reverse reaction
+			{
+				RxnExtent = -1;
+				p2 = w->DrawRandomPrimitiveBySpecies(_swap[1]);
+				ph = w->DrawRandomPrimitiveBySpecies(_products[0]);
+	
+				if(ph==nullptr && p2==nullptr)
+					return;
+				
+				else if(ph==nullptr || p2==nullptr)
+				{
+					////std::cout<<"Only Half of the products present! Exiting"<<std::endl;
+					//exit(-1);
+					return;
+				}
+
+				//bias = double(comp[_swap[1]])/(comp[_swap[0]]+comp[_swap[1]]);
+			}
+
+			double lambdaratio;
+
+			int comp1 = comp[_i1];
+			int comp2 = comp[_i2];
+			int compph = comp[_products[0]];
+
+			auto V = pow(w->GetVolume(),RxnExtent);
+			auto lambda = w->GetWavelength(_products[0]);
+			auto lambda3 = pow(lambda*lambda*lambda,-1*RxnExtent);
+			double Nratio=0;
+			double Korxn=0;
+
+			EPTuple ei, ef;
+			double opi = 0.;
+			if(RxnExtent == -1)
+			{
+				Nratio = comp2*compph/(comp1 + 1.0);
+				Korxn = exp(_mu);
+
+				ei = ffm->EvaluateEnergy(*w);
+				opi = op->EvaluateOrderParameter(*w);
+
+				w->RemoveParticle(ph);
+				p2->SetCharge(_c1);
+				p2->SetMass(_m1);
+				p2->SetSpeciesID(_i1);
+				ef = ffm->EvaluateEnergy(*w);
+				lambdaratio = pow(_m1/_m2,3.0/2.0);
+			}
+
+			else
+			{
+				Nratio = comp1/((comp2+1.0)*(compph+1.0));
+				Korxn = exp(-_mu);
+
+				ei = ffm->EvaluateEnergy(*w);
+				opi = op->EvaluateOrderParameter(*w);
+
+				p1->SetCharge(_c2);
+				p1->SetMass(_m2);
+				p1->SetSpeciesID(_i2);				
+				ph = w->UnstashParticle(_products[0]);
+				// Generate a random position and orientation for particle insertion.
+				const auto& H = w->GetHMatrix();
+				Vector3D pr{_rand.doub(), _rand.doub(), _rand.doub()};
+				Vector3D pos = H*pr;
+				ph->SetPosition(pos);
+				// Insert particle.
+				w->AddParticle(ph);
+				ef = ffm->EvaluateEnergy(*w);
+				lambdaratio = pow(_m2/_m1,3.0/2.0);
+			}
+			auto opf = op->EvaluateOrderParameter(*w);
+			++_performed;
+
+			// Acceptance probability.
+			// removed bias
+			// removed Korxn
+			// Acceptance probability.
+			
+			double pacc = op->AcceptanceProbability(ei.energy, ef.energy, opi, opf, *w);
+
+			if(_prefac)
+			{
+				auto arg = Nratio*V*lambda3*lambdaratio;
+				auto& sim = SimInfo::Instance();
+				auto beta = 1.0/(w->GetTemperature()*sim.GetkB());
+				pacc *= arg*beta*Korxn;  // added beta in there
+			}
+			pacc = pacc > 1.0 ? 1.0 : pacc;
+
+			// Reject or accept move.
+			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
+			{
+				++_rejected;
+				if(RxnExtent == -1) 
+				{
+					p2->SetCharge(_c2);
+					p2->SetMass(_m2);
+					p2->SetSpeciesID(_i2);
+					w->AddParticle(ph);
+				}
+
+				else 
+				{
+					p1->SetCharge(_c1);
+					p1->SetMass(_m1);
+					p1->SetSpeciesID(_i1);
+					w->RemoveParticle(ph);
+					w->StashParticle(ph);
+				}
+
+			}
+
+			else
+			{
+				if(RxnExtent == -1)
+				{
+					w->StashParticle(ph);
+				}
+
+				// Update energies and pressures.
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
+			}
+
+
 		}
 
 		// Turns on or off the acceptance rule prefactor for DOS order parameter.

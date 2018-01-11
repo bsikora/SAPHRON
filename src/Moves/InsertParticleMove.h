@@ -234,16 +234,13 @@ namespace SAPHRON
 		{
 
 			Particle* plist[32];
-			//Evaluate initial energy and order parameter
-			auto ei = w->GetEnergy();
-			auto opi = op->EvaluateOrderParameter(*w);
 
 			unsigned int NumberofParticles=1;
 
 			// Unstash into particle list or single particle
 			if(_multi_insert)
 			{
-				NumberofParticles=_species.size();
+				NumberofParticles = _species.size();
 				for (unsigned int i = 0; i < _species.size(); i++)
 					plist[i] = w->UnstashParticle(_species[i]);
 			}
@@ -259,16 +256,19 @@ namespace SAPHRON
 			auto& sim = SimInfo::Instance();
 			auto beta = 1.0/(sim.GetkB()*w->GetTemperature());
 			auto V = w->GetVolume();
-			EPTuple ef;
 			auto& comp = w->GetComposition();
 
+			
+			// Get previous energy
+			auto ei = ffm->EvaluateEnergy(*w);
+			auto opi = op->EvaluateOrderParameter(*w);
 			// Generate a random position and orientation for particle insertion.
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 			{
-
 				const auto& H = w->GetHMatrix();
 				Vector3D pr{_rand.doub(), _rand.doub(), _rand.doub()};
 				Vector3D pos = H*pr;
+
 				plist[i]->SetPosition(pos);
 
 				// Choose random axis, and generate random angle.
@@ -289,29 +289,21 @@ namespace SAPHRON
 				auto mu = w->GetChemicalPotential(id);
 				auto lambda = w->GetWavelength(id);
 
-				if(_prefac)
-					Prefactor*=V/(lambda*lambda*lambda*N)*exp(beta*mu);
-			
-				// Evaluate new energy for each particle. 
-				// Insert particle one at a time. Done this way
-				// to prevent double counting in the forcefieldmanager
-				// Can be adjusted later if wated.
 
 				w->AddParticle(plist[i]);
-				//ef += ffm->EvaluateEnergy(*plist[i]);
-				ef += ffm->EvaluateEnergy(*w);
+				if(_prefac)
+					Prefactor*=V/(lambda*lambda*lambda*(N+1))*exp(beta*mu);
+			
 			}
 
+			auto ef = ffm->EvaluateEnergy(*w);
+			auto opf = op->EvaluateOrderParameter(*w);
 			++_performed;
 
-			// new energy update and eval OP. 
-			w->IncrementEnergy(ef.energy);
-			w->IncrementPressure(ef.pressure);
-			auto opf = op->EvaluateOrderParameter(*w);
 
 			// The acceptance rule is from Frenkel & Smit Eq. 5.6.8.
 			// However, it iwas modified since we are using the *final* particle number.
-			double pacc = op->AcceptanceProbability(ei, ef.energy, opi, opf, *w);
+			double pacc = op->AcceptanceProbability(ei.energy, ef.energy, opi, opf, *w);
 			
 			// If prefactor is enabled, compute.
 			if(_prefac)
@@ -321,13 +313,17 @@ namespace SAPHRON
 
 			if(!(override == ForceAccept) && (pacc < _rand.doub() || override == ForceReject))
 			{
-				// Stashing a particle automatically removes it from world. 
+				// Stashing a particle automatically removes it from world.
 				for (unsigned int i = 0; i < NumberofParticles; i++)
 					w->StashParticle(plist[i]);
 
-				w->IncrementEnergy(-1.0*ef.energy);
-				w->IncrementPressure(-1.0*ef.pressure);
 				++_rejected;
+			}
+			else
+			{
+				// Update energies and pressures.
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
 			}
 			
 		}

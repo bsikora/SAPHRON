@@ -1,0 +1,39 @@
+{
+	"type" : "object",
+	"varname" : "LJ126TubeWallC",
+	"properties" : {
+		"type" : {
+			"type" : "string",
+			"enum" : ["LJ126TubeWall"]
+		},
+		"epsilon" : {
+			"type" : "number"
+		},
+		"sigma" : {
+			"type" : "number",
+			"minimum" : 0
+		},
+		"rcut" : {
+			"type" : "number",
+			"minimum" : 0
+		},
+		"cylcen_y" : {
+			"type" : "number",
+			"minimum" : 0
+		},
+		"cylcen_z" : {
+			"type" : "number",
+			"minimum" : 0
+		},
+		"cylrad" : {
+			"type" : "number",
+			"minimum" : 0
+		},
+		"world" : {
+			"type" : "integer",
+			"minimum" : 0
+		}
+	},
+	"additionalProperties" : false,
+	"required" : ["type", "epsilon", "sigma", "rcut", "cylcen_y", "cylcen_z", "cylrad", "world"]
+}

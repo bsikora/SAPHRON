@@ -8,6 +8,7 @@ namespace SAPHRON
 	{
 	public:
 		//INSERT_DEC_HERE
+		static std::string LJ126TubeWallC;
 		static std::string PasquaMembraneC;
 		static std::string DirectorRestrictionC;
 		static std::string Constraints;

@@ -4,6 +4,7 @@
 #include "../Simulation/SimException.h"
 #include "DirectorRestrictionC.h"
 #include "PasquaMembraneC.h"
+#include "LJ126TubeWallC.h"
 #include "schema.h"
 
 using namespace Json;
@@ -79,6 +80,26 @@ namespace SAPHRON
 
 			auto w = wm->GetWorld(json["world"].asInt());
 			c = new PasquaMembraneC(w, epsilon, d, ra, rb, za, zb, neq, npol);
+		}
+		else if(type == "LJ126TubeWall")
+		{
+			reader.parse(JsonSchema::LJ126TubeWallC, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs.
+			validator.Parse(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto epsilon = json["epsilon"].asDouble();
+			auto sigma = json["sigma"].asDouble();
+			auto rcut = json["rcut"].asDouble();
+			auto cylcen_y = json["cylcen_y"].asDouble();
+			auto cylcen_z = json["cylcen_z"].asDouble();
+			auto cylrad = json["cylrad"].asDouble();
+
+			auto w = wm->GetWorld(json["world"].asInt());
+			c = new LJ126TubeWallC(w, epsilon, sigma, rcut, cylcen_y, cylcen_z, cylrad);
 		}
 		else
 		{

@@ -166,20 +166,20 @@ namespace SAPHRON
 		// Perform move using DOS interface.
 		virtual void Perform(World* w, ForceFieldManager* ffm, DOSOrderParameter* op , const MoveOverride& override) override
 		{
+
 			assert(w->GetParticleCount() > 1);
 
 			Particle* p1=nullptr;
 			Particle* p2=nullptr;			
 
-			if(_species.size()==2)
+			if(_species.size() == 2)
 			{
 				p1 = w->DrawRandomPrimitiveBySpecies(_species[0]);
 				p2 = w->DrawRandomPrimitiveBySpecies(_species[1]);
 
-				if(p1==nullptr || p2==nullptr)
+				if(p1 == nullptr || p2 == nullptr)
 					return;
 			}
-
 			else
 			{
 				p1 = w->DrawRandomParticle();
@@ -189,37 +189,34 @@ namespace SAPHRON
 					p2 = w->DrawRandomParticle();
 			}
 
-			// TODO: FFM is known to double count energies of two particles that are neighbors.
-			auto ei = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
+			auto ei = ffm->EvaluateEnergy(*w);
 			auto opi = op->EvaluateOrderParameter(*w);
 
-			// Increment pulled out since function is called for undo later on.
 			Perform(p1, p2);
 			++_performed;
 
-			auto ef = ffm->EvaluateEnergy(*p1) + ffm->EvaluateEnergy(*p2);
-			Energy de = ef.energy - ei.energy;
-			
-			// Update energies and pressures.
-			w->IncrementEnergy(de);
-			w->IncrementPressure(ef.pressure - ei.pressure);
-			
+			auto ef = ffm->EvaluateEnergy(*w);
 			auto opf = op->EvaluateOrderParameter(*w);
+
+			// Get sim info for kB.
+			auto& sim = SimInfo::Instance();
 
 			// Acceptance probability. 
 			double p = op->AcceptanceProbability(ei.energy, ef.energy, opi, opf, *w);
+			p = p > 1.0 ? 1.0 : p;
 
 			// Reject or accept move.
 			if(!(override == ForceAccept) && (p < _rand.doub() || override == ForceReject))
 			{
 				Perform(p1, p2);
-				
-				// Update energies and pressures.
-				w->IncrementEnergy(-1.0*de);
-				w->IncrementPressure(ei.pressure - ef.pressure);
-
 				++_rejected;
 			}
+			else
+			{
+				// Update energies and pressures.
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
+			}	
 		}
 
 		virtual double GetAcceptanceRatio() const override

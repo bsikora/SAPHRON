@@ -29,9 +29,9 @@ namespace SAPHRON
 			auto de = ef.total() - ei.total();
 			auto dop = GetHistValue(opf) - GetHistValue(opi);
 
-			std::cout << "**** Ei " << ei.total() << " Ef " << ef.total() 
+			/*std::cout << "**** Ei " << ei.total() << " Ef " << ef.total() 
 					  << " Hi " << GetHistValue(opi) << " Hf " << GetHistValue(opf) 
-					  << " Oi " << opi << " Of " << opf << std::endl;
+					  << " Oi " << opi << " Of " << opf << std::endl;*/
 			
 			auto p = exp(-de/(sim.GetkB()*w.GetTemperature()) - dop);
 			return p > 1.0 ? 1.0 : p;

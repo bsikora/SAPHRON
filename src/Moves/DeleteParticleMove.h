@@ -189,11 +189,11 @@ namespace SAPHRON
 
 			unsigned int NumberofParticles=1;
 
-						// Unstash into particle list or single particle
+			// Unstash into particle list or single particle
 			if(_multi_delete)
 			{
 				auto& comp = w->GetComposition();
-				NumberofParticles=_species.size();
+				NumberofParticles = _species.size();
 				for (unsigned int i = 0; i < _species.size(); i++)
 				{
 					if(comp[_species[i]] == 0)
@@ -222,11 +222,14 @@ namespace SAPHRON
 			auto V = w->GetVolume();
 			auto& comp = w->GetComposition();
 			
+
+			// Get previous energy
+			auto ei = ffm->EvaluateEnergy(*w);
 			auto opi = op->EvaluateOrderParameter(*w);
-			EPTuple ei;
 
 			for (unsigned int i = 0; i < NumberofParticles; i++)
 			{
+
 				auto id = plist[i]->GetSpeciesID();
 				auto N = comp[id];
 				auto mu = w->GetChemicalPotential(id);
@@ -234,23 +237,20 @@ namespace SAPHRON
 
 				if(_prefac)
 					Prefactor*=(lambda*lambda*lambda*N)/V*exp(-beta*mu);
-
-				// Evaluate old energy. For multi deletion moves
-				// Need to remove particle one by one so energy
-				// is not double counted.
-				ei += ffm->EvaluateEnergy(*plist[i]);
-				w->RemoveParticle(plist[i]);
 			}
 
+			for (unsigned int i = 0; i < NumberofParticles; i++)
+			{
+				w->RemoveParticle(plist[i]);
+			}
+			
+			auto ef = ffm->EvaluateEnergy(*w);
+			auto opf = op->EvaluateOrderParameter(*w);
 			++_performed;
 
-			w->IncrementEnergy(-1.0*ei.energy);
-			w->IncrementPressure(-1.0*ei.pressure);
-			auto opf = op->EvaluateOrderParameter(*w);
-			auto ef = w->GetEnergy();
 
 			// Acceptance rule.
-			double pacc = op->AcceptanceProbability(ei.energy, ef, opi, opf, *w);
+			double pacc = op->AcceptanceProbability(ei.energy, ef.energy, opi, opf, *w);
 
 			if(_prefac)
 			{
@@ -263,18 +263,23 @@ namespace SAPHRON
 			{
 				// Add it back to the world.
 				for (unsigned int i = 0; i < NumberofParticles; i++)
+				{
 					w->AddParticle(plist[i]);
-
-				w->IncrementEnergy(ei.energy);
-				w->IncrementPressure(ei.pressure);
+				}
 				++_rejected;
 			}
 			else
 			{
 				// Stash the particle which actually removes it from the world. 
 				for (unsigned int i = 0; i < NumberofParticles; i++)
+				{
 					w->StashParticle(plist[i]);
+				}
+				// Update energies and pressures.
+				w->SetEnergy(ef.energy);
+				w->SetPressure(ef.pressure);
 			}
+
 		}
 
 		// Turn on or off the acceptance rule prefactor 
