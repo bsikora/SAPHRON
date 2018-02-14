@@ -1,0 +1,51 @@
+{
+	"type" : "object",
+	"varname" : "MDMoveSSages",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["MolecularDynamicsSSages"]
+		},
+		"data_file" : {
+			"type" : "string"
+		},
+		"input_file" : {
+			"type" : "string"
+		},
+		"minimize_file" : {
+			"type" : "string"
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
+		},
+		"mapping_ids": {
+			"type" : "array",
+			"varname" : "Mapping_IDs",
+			"items" : {
+				"type" : "array",
+				"items" : [
+					{
+						"type" : "string"
+					},
+					{
+						"type" : "integer",
+						"minimum" : 1
+					}
+				],
+				"minItems" : 2,
+				"maxItems" : 2
+			},
+			"minItems" : 1
+		},
+		"op_prefactor" : {
+			"type" : "boolean"
+		}
+	},
+	"required": ["type", "data_file", "input_file", "mapping_ids"],
+	"additionalProperties": false
+}

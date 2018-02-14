@@ -13,13 +13,14 @@
 #include "../DensityOfStates/DOSOrderParameter.h"
 #include <iomanip>
 #include <stdio.h>
+#include <cstdlib>
 
 using namespace LAMMPS_NS;
 
 // This move currently only supports **one** type of bond
 namespace SAPHRON
 {
-	class MDMove : public Move
+	class MDMoveSSages : public Move
 	{
 	private:
 
@@ -59,6 +60,12 @@ namespace SAPHRON
 		int MDsweeps = 0;   ///*****
 		int hit_detection_numb = 0;   ///*****
 		int Rg_chg_hit_detection_numb = 0;   ///*****
+
+
+		bool file_check = false; ///*****
+		std::string lmps_exe; ///*****
+		std::string lmps_in_str; ///*****
+
 
 		// matches spahron id to lammps ids
 		void UpdateMap(const World &world)
@@ -208,266 +215,56 @@ namespace SAPHRON
 			datafile.close();
 		}
 
+
+
+
 		// Update SAPHRON from LAMMPS
 		void ReadInputFile(std::string file_to_read)
 		{
-			// open LAMMPS input script
-			FILE *fp;
-			int rank;
-			MPI_Comm_rank(_comm_lammps, &rank);
-			if (rank == 0)
+			if (file_check == false)
 			{
+				
+				FILE *fp;
 				fp = fopen(file_to_read.c_str(),"r");
 				if (fp == NULL)
 				{
 					throw std::logic_error("ERROR: Could not open LAMMPS input scripts " + file_to_read);
 				}
-			}
-
-			// Read lammps file line by line
-			int n;
-			char line[1024];
-			while (1) 
-			{
-				if (rank == 0) 
-				{
-					if (fgets(line,1024,fp) == NULL) n = 0;
-					else n = strlen(line) + 1;
-					if (n == 0) fclose(fp);
-				}
-
-				MPI_Bcast(&n,1,MPI_INT,0,_comm_lammps);
-				if (n == 0) break;
-					MPI_Bcast(line,n,MPI_CHAR,0,_comm_lammps);
-
-				std::string test = line;
-
-				size_t f = test.find("RANDOM");
-				if (f != std::string::npos)
-				{
-					test.replace(f, std::string("RANDOM").length(), std::to_string(int(_rand.int32()/1000 + 1)));///*****
-					_lmp->input->one(test.c_str());
-				}
 				else
 				{
-					_lmp->input->one(line);
+					file_check = true;
+					lmps_exe = "mpirun -np 4 /afs/crc.nd.edu/group/whitmer/Data05/Data-Vik/lammps_02_14_18/src/lmp_mpi";
 				}
 			}
+
+			lmps_in_str = lmps_exe+" < "+file_to_read+" "+"-screen none"; // the screen none is for suppressing lammps
+			std::system(lmps_in_str.c_str());
 		}
 
+
+
+
+
+
+		// Update SAPHRON from LAMMPS
 		void UpdateSAPHRON(const World &world)
 		{
-			int natoms = static_cast<int> (_lmp->atom->natoms);
 
-			if(world.GetPrimitiveCount() != natoms)
-			{
-				std::cout<<"LAMMPS N = "<<natoms<<". SAPHRON N = "<<world.GetPrimitiveCount()<<std::endl;
-				throw std::runtime_error("N in LAMMPS does not match N in SAPHRON!");
-			}
-
-			double *x = new double[3*natoms];
-			double *v = new double[3*natoms];
-			int *image = new int[natoms];
-			lammps_gather_atoms(_lmp, "image", 0, 1, image);
-			auto& box = world.GetHMatrix();
-
-			lammps_gather_atoms(_lmp, "x", 1, 3, x);
-			lammps_gather_atoms(_lmp, "v", 1, 3, v);
+			int id, mol, type, ix_read, iy_read, iz_read;
+			double charge_read, x_read, y_read, z_read, vx_read, vy_read, vz_read;
 			Position pos;
-			for (int i = 0; i < natoms; i++)
-			{
-				/*
-				pos[0] = x[i*3] + box(0,0)*((image[i] & IMGMASK) - IMGMAX);
-				pos[1] = x[i*3 + 1] + (box(1,1)+2*_wallspace_y)*((image[i] >> IMGBITS & IMGMASK) - IMGMAX); ///*****
-				pos[2] = x[i*3 + 2] + (box(2,2)+2*_wallspace_z)*((image[i] >> IMG2BITS) - IMGMAX); ///*****
-				*/
-				pos[0] = x[i*3];
-				pos[1] = x[i*3 + 1]; ///*****
-				pos[2] = x[i*3 + 2]; ///*****
 
-				/*
-				std::cerr << "position from lammps x " << x[i*3] << " " << std::endl;      ///*****
-				std::cerr << "position from lammps y " << x[i*3 + 1] << " " << std::endl;  ///*****
-				std::cerr << "position from lammps z " << x[i*3 + 2] << " " << std::endl; ///*****
-				*/
-
-				_L2S_map[i]->SetPosition(pos);
-				_L2S_vxmap[_L2S_map[i]] = v[i*3]; ///***** could cause problem
-				_L2S_vymap[_L2S_map[i]] = v[i*3 + 1]; ///*****
-				_L2S_vzmap[_L2S_map[i]] = v[i*3 + 2]; ///*****
-
-				_L2S_ixmap[_L2S_map[i]] = ((image[i] & IMGMASK) - IMGMAX); ///***** could cause problem
-				_L2S_iymap[_L2S_map[i]] = ((image[i] >> IMGBITS & IMGMASK) - IMGMAX); ///*****
-				_L2S_izmap[_L2S_map[i]] = ((image[i] >> IMG2BITS) - IMGMAX); ///*****
-			}
-
-			// PRINTING OUT RG AND CHARGE FRAC VALUES
-			if (_perma_mark == 0)
-			{
-				for (auto& p : world)
-				{
-					if(p->HasChildren())
-					{
-						for(auto& cp : *p)
-						{
-							//std::cout<< "species ID is"<< cp->GetSpecies()<<std::endl;
-						    if ((cp->GetSpecies().compare("Monomer2") == 0) || (cp->GetSpecies().compare("dMonomer2") == 0))
-						    {
-	      						_perma_mark = 2;
-	      						break;
-	  						}else{
-	  							_perma_mark = 1;
-	  						}
-	      				}
-	  				}
-				}
-			}
-
-	// ****************************** CASES BASED ON PERMA_MARK ******************************************//
-
-			if (_perma_mark == 1 && Rg_chg_hit_detection_numb == 9)    // added hit detection number for Rg file so it is not printed every MD
-			{
-
-			int sumCharge = 0;
-			int num_monomers = 0;
-			for(auto& p : world)
-				if(p->HasChildren())
-				{
-					num_monomers = 0;
-					sumCharge = 0;
-					for(auto& cp : *p)
-					{
-						num_monomers++;
-					    if ((cp->GetCharge() < 0) || (cp->GetCharge() > 0))
-      						sumCharge++;
-      				}
-  				}
-
-		  	double f_value = double(sumCharge)/double(num_monomers);
-			double Rg_value = *((double*) lammps_extract_compute(_lmp, "Rg_compute", 0, 0));
-			/***** THIS IS FOR SWELLING OF INDIVIDUAL BRUSHES IN CONFINEMENT******/
-			//double avg_Rg_value = *((double*) lammps_extract_variable(_lmp, "avg_Rg", NULL));
-			/********/
-			double PE_value = *((double*) lammps_extract_compute(_lmp, "myPE", 0, 0));
-			double KE_value = *((double*) lammps_extract_compute(_lmp, "myKE", 0, 0));
-			double Total_E_value = PE_value + KE_value;
-
-			std::ofstream Rgchgfracfile;
-			Rgchgfracfile.open("Rg_chg_frac_"+_input_file,std::ofstream::app);
-		  	Rgchgfracfile<<std::setprecision(4)<<std::fixed<<std::to_string(f_value)<<"     "<<std::to_string(Rg_value)<<
-		  	"     "<<std::to_string(PE_value)<<"     "<<std::to_string(Total_E_value)<<"     "<<std::to_string(num_monomers)<<
-		  	"     "<<std::to_string(sumCharge)<<std::endl;
-			/***** THIS IS FOR SWELLING OF INDIVIDUAL BRUSHES IN CONFINEMENT******/
-		  	//"     "<<std::to_string(avg_Rg_value)<<std::endl;
-		  	/********/
-		  	Rgchgfracfile.close();
-		  	Rg_chg_hit_detection_numb = -1;
-
-
-			/**** THIS IS THE FILE WITH APPENDED SNAPSHOTS (USE WHEN NECESSARY)***
-				if (hit_detection_numb == 9)
-				{
-					std::ofstream dump_file;  ///*****
-					int MDstep = MDsweeps*1000;
-					dump_file.open("Appended_snapshots_"+_input_file, std::ofstream::app);
-					dump_file<<"%%################!!!!!!The MD step is: "<<MDstep<<" ################!!!!!!!!!!"<<std::endl;
-					for(auto& p : world)
-						if(p->HasChildren())
-						{
-							for(auto& cp : *p)
-							{
-								dump_file<< _S2L_map[cp->GetGlobalIdentifier()] <<" "<< _S2L_imap[cp->GetSpecies()] <<" "<<
-								cp->GetCharge()<<" ";
-								auto& xyz = cp->GetPosition(); // correct cause _L2S_map[i]->SetPosition(pos) update before
-							    for(auto& x : xyz){
-		    						dump_file<< x <<" ";
-								}
-								dump_file<<_L2S_ixmap[cp]<<" "<<_L2S_iymap[cp]<<" "<<_L2S_izmap[cp];
-								dump_file<<std::endl;
-		      				}
-		      				dump_file.close();
-		  				}
-					hit_detection_numb= -1;
-				}
-				hit_detection_numb++;
-			** THIS IS THE FILE WITH APPENDED SNAPSHOTS (USE WHEN NECESSARY)****/
-
-		  }
-
-			if (_perma_mark == 2 && Rg_chg_hit_detection_numb == 9)
-			{
-
-			int sumCharge_1 = 0;
-			int sumCharge_2 = 0;
-			int num_monomers_1 = 0;
-			int num_monomers_2 = 0;
-			int _count = 0;
-			for(auto& p : world)
-			{
-				if(p->HasChildren())
-				{
-					for(auto& cp : *p)
-					{
-						if ((cp->GetSpecies().compare("Monomer2") == 0) || (cp->GetSpecies().compare("dMonomer2") == 0))
-							num_monomers_2++;
-						if ((cp->GetSpecies().compare("Monomer") == 0) || (cp->GetSpecies().compare("dMonomer") == 0))
-							num_monomers_1++;
-					    if ((cp->GetSpecies().compare("dMonomer2") == 0) || (cp->GetCharge() > 0))
-      						sumCharge_2++;
-					    if ((cp->GetSpecies().compare("dMonomer") == 0) || (cp->GetCharge() < 0))
-      						sumCharge_1++;
-      				}
-  				}
-  				_count++;
-  			}
-
-		  	double f_value_mono_1 = double(sumCharge_1)/double(num_monomers_1);
-		  	double f_value_mono_2 = double(sumCharge_2)/double(num_monomers_2);
-			double Rg_value_mono_1 = *((double*) lammps_extract_compute(_lmp, "Rg_compute_1", 0, 0));
-			double Rg_value_mono_2 = *((double*) lammps_extract_compute(_lmp, "Rg_compute_2", 0, 0));
-			double PE_value = *((double*) lammps_extract_compute(_lmp, "myPE", 0, 0));
-			double KE_value = *((double*) lammps_extract_compute(_lmp, "myKE", 0, 0));
-			double Total_E_value = PE_value + KE_value;
-
-			std::ofstream Rgchgfracfile;
-			Rgchgfracfile.open("Rg_chg_frac_"+_input_file,std::ofstream::app);
-		  	Rgchgfracfile<<std::setprecision(4)<<std::fixed<<
-		  	std::to_string(f_value_mono_1)<<
-		  	"     "<<std::to_string(Rg_value_mono_1)<<
-		  	"     "<<std::to_string(f_value_mono_2)<<
-		  	"     "<<std::to_string(Rg_value_mono_2)<<
-		  	"     "<<std::to_string(PE_value)<<
-		  	"     "<<std::to_string(Total_E_value)<<
-		  	"     "<<std::to_string(num_monomers_1)<<
-		  	"     "<<std::to_string(num_monomers_2)<<
-		  	"     "<<std::to_string(sumCharge_1)<<
-		  	"     "<<std::to_string(sumCharge_2)<<std::endl;
-		  	Rgchgfracfile.close();
-		  	Rg_chg_hit_detection_numb = -1;
-
-		  }
-
-
-
-
-
-		  	/**** THIS IS FOR AJ PHASE DIAGRAM SIMULATIONS ****
-		  if (_perma_mark == 2)
-		  {
 			FILE *fp;
-			std::string file_to_read = "density_"+_input_file+".dat";
+			std::string dumpfile_to_read = "dump_"+_input_file+".lammpstrj";
 
-			fp = fopen(file_to_read.c_str(),"r");
+			fp = fopen(dumpfile_to_read.c_str(),"r");
 			if (fp == NULL)
 			{
-				throw std::logic_error("ERROR: Could not open density file " + file_to_read);
+				throw std::logic_error("ERROR: Could not open dump file " + dumpfile_to_read);
 			}
 
-			std::ofstream chunkfile;
-			chunkfile.open("chunkdata_"+_input_file+".dat",std::ofstream::app);
-
 			// Read file line by line
-			int n;
+			int n, m=0;
 			char line[1024];
 			while (1) 
 			{
@@ -476,29 +273,40 @@ namespace SAPHRON
 				else n = strlen(line) + 1;
 				if (n == 0) fclose(fp);
 				if (n == 0) break;
-		  		chunkfile<< std::setprecision(4)<<std::fixed<<line;
-		  		
+				
+				if (m <= 8)  // this is because to skip first few lines
+				{
+					m++;
+					continue;
+				}
+				sscanf(line, "%d %d %lf %lf %lf %lf %d %d %d %lf %lf %lf", &id, &type, &charge_read, &x_read, &y_read, &z_read, &ix_read, &iy_read, &iz_read,
+					&vx_read, &vy_read, &vz_read);
+				//std::cout<<line<<std::endl;
+				//std::cout<<"I AM HERE !!"<<std::endl;
+				pos[0] = x_read;
+				pos[1] = y_read; ///*****
+				pos[2] = z_read; ///*****
+				_L2S_map[id-1]->SetPosition(pos);
+				//std::cout<<_L2S_map[id-1]->GetPosition()<<std::endl;
+				_L2S_vxmap[_L2S_map[id-1]] = vx_read; ///***** could cause problem
+				_L2S_vymap[_L2S_map[id-1]] = vy_read; ///*****
+				_L2S_vzmap[_L2S_map[id-1]] = vz_read; ///*****
+
+				_L2S_ixmap[_L2S_map[id-1]] = ix_read; ///***** could cause problem
+				_L2S_iymap[_L2S_map[id-1]] = iy_read; ///*****
+				_L2S_izmap[_L2S_map[id-1]] = iz_read; ///*****
+				/*printf("Numbers are: %d %d %lf %lf %lf %lf %d %d %d %lf %lf %lf \n",id, type, charge_read, x_read, y_read, z_read, ix_read, iy_read, iz_read,
+					vx_read, vy_read, vz_read);*/
 			}
-			chunkfile.close();
-		  }
-			**** THIS IS FOR AJ PHASE DIAGRAM SIMULATIONS ****/
-
-
-
-
-
-
-  	///*****
-		  	MDsweeps++;
-		  	Rg_chg_hit_detection_numb++;
-			delete [] x;
-			delete [] v;
-			delete [] image;
 		}
 
 
+
+
+
+
 	public:
-		MDMove(std::string data_file, std::string input_file, 
+		MDMoveSSages(std::string data_file, std::string input_file, 
 				std::string minimize_file, std::vector<std::string> sids,
 				std::vector<int> lids, unsigned seed = 2437) : 
 		_rand(seed), _comm_lammps(), _lmp(), _data_file(data_file), 
@@ -540,7 +348,7 @@ namespace SAPHRON
 			sprintf(largs[2], "none");  ///*****
 
              ///replace 0 with 3 and NULL with largs to suppress lammps output
-			_lmp = new LAMMPS(3, largs, _comm_lammps);  
+			//_lmp = new LAMMPS(3, largs, _comm_lammps);  
 			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
@@ -560,7 +368,7 @@ namespace SAPHRON
 			w->SetEnergy(wor_ef.energy);
 			w->SetPressure(wor_ef.pressure);
 
-			delete _lmp;
+			//delete _lmp;
 		}
 
 		virtual void Perform(World* w, 
@@ -584,7 +392,7 @@ namespace SAPHRON
 			sprintf(largs[2], "none");  ///*****
 
              ///replace 0 with 3 and NULL with largs to suppress lammps output
-			_lmp = new LAMMPS(3, largs, _comm_lammps);  
+			//_lmp = new LAMMPS(3, largs, _comm_lammps);  
 			
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
@@ -605,7 +413,7 @@ namespace SAPHRON
 			w->SetEnergy(wor_ef.energy);
 			w->SetPressure(wor_ef.pressure);
 
-			delete _lmp;
+			//delete _lmp;
 		}
 
 		// Turns on or off the acceptance rule prefactor for DOS order parameter.
@@ -632,7 +440,7 @@ namespace SAPHRON
 		// Clone move.
 		Move* Clone() const override
 		{
-			return new MDMove(static_cast<const MDMove&>(*this));
+			return new MDMoveSSages(static_cast<const MDMoveSSages&>(*this));
 		}
 
 	};
