@@ -32,6 +32,7 @@
 #ifdef USING_LAMMPS
 #include "MDMove.h"
 #include "MDMoveSSages.h"
+#include "MDMoveMultiCore.h"
 #endif
 using namespace Json;
 
@@ -404,7 +405,6 @@ namespace SAPHRON
 			move = static_cast<Move*>(m);
 		}
 		#endif
-		#ifdef USING_LAMMPS
 		else if(type == "MolecularDynamicsSSages")
 		{
 			reader.parse(JsonSchema::MDMoveSSages, schema);
@@ -419,6 +419,8 @@ namespace SAPHRON
 			auto datafile = json.get("data_file","none").asString();
 			auto inputfile = json.get("input_file","none").asString();
 			auto minimizefile = json.get("minimize_file","none").asString();
+			auto ssagesfile = json.get("ssages_file","none").asString();
+			auto numproc = json.get("num_proc",1).asInt();
 			
 			std::vector<std::string> sidentities;
 			std::vector<int> lidentities;
@@ -430,11 +432,40 @@ namespace SAPHRON
 				lidentities.push_back(map[1].asInt());
 			}
 
-			auto* m = new MDMoveSSages(datafile, inputfile, minimizefile, sidentities, lidentities, seed);
+			auto* m = new MDMoveSSages(datafile, inputfile, minimizefile, ssagesfile, numproc,sidentities, lidentities, seed);
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
-		#endif
+		else if(type == "MolecularDynamicsMultiCore")
+		{
+			reader.parse(JsonSchema::MDMoveMultiCore, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto datafile = json.get("data_file","none").asString();
+			auto inputfile = json.get("input_file","none").asString();
+			auto minimizefile = json.get("minimize_file","none").asString();
+			auto numproc = json.get("num_proc",1).asInt();
+			
+			std::vector<std::string> sidentities;
+			std::vector<int> lidentities;
+
+			auto& mapping = json["mapping_ids"];
+			for(auto& map : mapping)
+			{
+				sidentities.push_back(map[0].asString());
+				lidentities.push_back(map[1].asInt());
+			}
+
+			auto* m = new MDMoveMultiCore(datafile, inputfile, minimizefile, numproc,sidentities, lidentities, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
 		else if(type == "ParticleSwap")
 		{
 			reader.parse(JsonSchema::ParticleSwapMove, schema);

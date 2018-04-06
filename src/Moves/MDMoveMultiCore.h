@@ -11,7 +11,7 @@
 // This move currently only supports **one** type of bond
 namespace SAPHRON
 {
-	class MDMoveSSages : public Move
+	class MDMoveMultiCore : public Move
 	{
 	private:
 
@@ -211,8 +211,8 @@ namespace SAPHRON
 
 
 
-		// Create Seed updated input file
-		void ChangeInputFile(std::string file_to_read)
+		// Update SAPHRON from LAMMPS
+		void ReadInputFile(std::string file_to_read, int _num_proc)
 		{
 			
 			FILE *fp;
@@ -247,32 +247,11 @@ namespace SAPHRON
 			}
 
 			inputfile.close();
-		}
 
-
-
-
-
-		// run minimize file if called
-		void RunMinimizeFile(std::string file_to_read, int _num_proc)
-		{
 			_exe = "mpirun -np "+std::to_string(_num_proc)+" /opt/crc/l/lammps/11Aug17/src/lammps/src1/lmp_mpi < ";
-			_in_str = _exe+file_to_read+" "+"-screen none";
+			_in_str = _exe+_input_file+"_seed_update"+" "+"-screen none";
 			std::system(_in_str.c_str());
 		}
-
-
-
-
-
-		// Run ssages
-		void RunSSagesFile(std::string file_to_read, int _num_proc)
-		{
-			_exe = "mpirun -np "+std::to_string(_num_proc)+" /afs/crc.nd.edu/group/whitmer/Data05/Data-Vik/SSAGES-public/build/ssages ";
-			_in_str = _exe+file_to_read;
-			std::system(_in_str.c_str());
-		}
-
 
 
 
@@ -331,15 +310,13 @@ namespace SAPHRON
 
 
 	public:
-		MDMoveSSages(std::string data_file, std::string input_file, 
+		MDMoveMultiCore(std::string data_file, std::string input_file, 
 				std::string minimize_file,
-				std::string ssages_file,
 				int num_proc,
 				std::vector<std::string> sids,
 				std::vector<int> lids, unsigned seed = 2437) : 
 		_rand(seed), _data_file(data_file), 
 		_input_file(input_file), _minimize_file(minimize_file),
-		_ssages_file(ssages_file),
 		_num_proc(num_proc),
 		_S2L_map(), _S2L_imap(), _L2S_map()
 		{
@@ -371,16 +348,15 @@ namespace SAPHRON
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
 			{
-				RunMinimizeFile(_minimize_file, _num_proc);
+				ReadInputFile(_minimize_file, _num_proc);
 				_minimize_file = "none";
 			}
 			else
 			{
-				ChangeInputFile(_input_file);
-				RunSSagesFile(_ssages_file, _num_proc);
+				ReadInputFile(_input_file, _num_proc);
 			}
 
-			// updates position in saphron
+			// updates positoin in saphron
 			UpdateSAPHRON(*w);
 			w->UpdateNeighborList();
 			// Update energies and pressures.
@@ -403,16 +379,14 @@ namespace SAPHRON
 			// if minimize file exits lammps will run it
 			if(_minimize_file.compare("none") != 0)
 			{
-				RunMinimizeFile(_minimize_file, _num_proc);
+				ReadInputFile(_minimize_file, _num_proc);
 				_minimize_file = "none";
 			}
 			else
 			{
-				ChangeInputFile(_input_file);
-				RunSSagesFile(_ssages_file, _num_proc);
+				ReadInputFile(_input_file, _num_proc);
 			}
-
-			// updates position in saphron
+			// updates positoin in saphron
 			UpdateSAPHRON(*w);
 			w->UpdateNeighborList();
 
@@ -446,7 +420,7 @@ namespace SAPHRON
 		// Clone move.
 		Move* Clone() const override
 		{
-			return new MDMoveSSages(static_cast<const MDMoveSSages&>(*this));
+			return new MDMoveMultiCore(static_cast<const MDMoveMultiCore&>(*this));
 		}
 
 	};

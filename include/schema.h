@@ -48,6 +48,7 @@ namespace SAPHRON
 		static std::string Observers;
 		static std::string JSONObserver;
 		static std::string DLMFileObserver;
+		static std::string MDMoveMultiCore;
 		static std::string MDMoveSSages;
 		static std::string TubeConfinementAcidReactionMove;
 		static std::string TubeConfinementDeleteParticleMove;

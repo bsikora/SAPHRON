@@ -1,10 +1,10 @@
 {
 	"type" : "object",
-	"varname" : "MDMoveSSages",
+	"varname" : "MDMoveMultiCore",
 	"properties" : {
 		"type" : { 
 			"type" : "string",
-			"enum" : ["MolecularDynamicsSSages"]
+			"enum" : ["MolecularDynamicsMultiCore"]
 		},
 		"data_file" : {
 			"type" : "string"
@@ -13,9 +13,6 @@
 			"type" : "string"
 		},
 		"minimize_file" : {
-			"type" : "string"
-		},
-		"ssages_file" : {
 			"type" : "string"
 		},
 		"num_proc" : {
