@@ -1,0 +1,40 @@
+{
+	"type" : "object",
+	"varname" : "MODDeleteParticleMove",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["MODDeleteParticle"]
+		},
+		"species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"extra_species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"multi_delete" : {
+			"type" : "boolean"
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
+		},
+		"op_prefactor" : {
+			"tyoe" : "boolean"
+		}
+	},
+	"required" : ["type", "species","extra_species"],
+	"additionalProperties": false
+}

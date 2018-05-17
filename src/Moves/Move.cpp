@@ -29,6 +29,10 @@
 #include "TubeConfinementInsertParticleMove.h"
 #include "TubeConfinementDeleteParticleMove.h"
 #include "TubeConfinementAcidReactionMove.h"
+
+#include "MODInsertParticleMove.h"
+#include "MODDeleteParticleMove.h"
+
 #ifdef USING_LAMMPS
 #include "MDMove.h"
 #include "MDMoveSSages.h"
@@ -218,6 +222,31 @@ namespace SAPHRON
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}
+		else if(type == "MODDeleteParticle")
+		{
+			reader.parse(JsonSchema::MODDeleteParticleMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs.
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto multi_d = json.get("multi_delete", false).asBool();
+			
+			std::vector<std::string> species;
+			for(auto& s : json["species"])
+				species.push_back(s.asString());
+
+			std::vector<std::string> ExtraCount;
+			for(auto& s : json["extra_species"])
+				ExtraCount.push_back(s.asString());
+
+			auto* m = new MODDeleteParticleMove(species, ExtraCount, multi_d, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
 		else if(type == "ConfinementDeleteParticle")
 		{
 			reader.parse(JsonSchema::ConfinementDeleteParticleMove, schema);
@@ -314,6 +343,32 @@ namespace SAPHRON
 				species.push_back(s.asString());
 
 			auto* m = new InsertParticleMove(species, *wm, scount, multi_i, seed);
+			m->SetOrderParameterPrefactor(prefac);
+			move = static_cast<Move*>(m);
+		}
+		else if(type == "MODInsertParticle")
+		{
+			reader.parse(JsonSchema::MODInsertParticleMove, schema);
+			validator.Parse(schema, path);
+
+			// Validate inputs. 
+			validator.Validate(json, path);
+			if(validator.HasErrors())
+				throw BuildException(validator.GetErrors());
+
+			auto scount = json["stash_count"].asInt();
+			auto prefac = json.get("op_prefactor", true).asBool();
+			auto multi_i = json.get("multi_insertion", false).asBool(); 
+
+			std::vector<std::string> species;
+			for(auto& s : json["species"])
+				species.push_back(s.asString());
+
+			std::vector<std::string> ExtraCount;
+			for(auto& s : json["extra_species"])
+				ExtraCount.push_back(s.asString());
+
+			auto* m = new MODInsertParticleMove(species, ExtraCount, *wm, scount, multi_i, seed);
 			m->SetOrderParameterPrefactor(prefac);
 			move = static_cast<Move*>(m);
 		}

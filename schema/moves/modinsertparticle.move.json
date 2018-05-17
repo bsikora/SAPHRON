@@ -1,0 +1,44 @@
+{
+	"type" : "object",
+	"varname" : "MODInsertParticleMove",
+	"properties" : {
+		"type" : { 
+			"type" : "string",
+			"enum" : ["MODInsertParticle"]
+		},
+		"stash_count" : {
+			"type" : "integer", 
+			"minimum" : 1
+		},
+		"species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"extra_species" : {
+			"type" : "array",
+			"items" : {
+				"type" : "string"
+			},
+			"minimumItems" : 1
+		},
+		"multi_insertion" : {
+			"type" : "boolean"
+		},
+		"seed" : {
+			"type" : "integer",
+			"minimum" : 0
+		},
+		"weight" : {
+			"type" : "integer",
+			"minimum" : 1
+		},
+		"op_prefactor" : {
+			"type" : "boolean"
+		}
+	},
+	"required" : ["type", "stash_count", "species","extra_species"],
+	"additionalProperties": false
+}
